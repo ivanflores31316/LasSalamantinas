@@ -8,7 +8,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-        :root { --primary: #4f46e5; --primary-dark: #4338ca; }
+        
+        :root { 
+            --primary: #4f46e5; 
+            --primary-dark: #4338ca; 
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
         
         body { 
             font-family: 'Poppins', sans-serif; 
@@ -16,11 +22,15 @@
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
             touch-action: manipulation;
+            padding-top: var(--safe-top);
+            padding-bottom: var(--safe-bottom);
         }
 
+        /* Tabs Logic */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
+        /* Animations */
         .scale-up { animation: scaleUp 0.15s ease-out; }
         @keyframes scaleUp {
             from { transform: scale(0.96); opacity: 0; }
@@ -33,24 +43,33 @@
             border-color: var(--primary-dark) !important; 
         }
 
-        input, textarea, select { font-size: 16px !important; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Mejoras táctiles para móviles */
-        .btn-active:active { transform: scale(0.95); opacity: 0.8; }
-        
-        .scroll-container {
-            -webkit-overflow-scrolling: touch;
-            overflow-y: auto;
+        /* Mobile specific inputs */
+        input, textarea, select { 
+            font-size: 16px !important; 
+            appearance: none;
         }
 
-        /* Prevenir que el zoom afecte el diseño en inputs */
-        @media screen and (max-width: 768px) {
-            input, textarea { font-size: 16px !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        /* Touch feedback */
+        .btn-active:active { 
+            transform: scale(0.95); 
+            opacity: 0.8; 
+            transition: transform 0.1s ease;
+        }
+        
+        /* Bottom Sheet for Mobile */
+        @media (max-width: 640px) {
+            .modal-content-mobile {
+                border-radius: 2.5rem 2.5rem 0 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-bottom: 0 !important;
+            }
         }
     </style>
 </head>
-<body class="text-slate-800 antialiased">
+<body class="text-slate-800 antialiased overflow-x-hidden">
 
     <!-- PANTALLA DE INICIO DE SESIÓN -->
     <section id="login-screen" class="fixed inset-0 bg-indigo-900 flex items-center justify-center z-[100] p-6">
@@ -61,27 +80,28 @@
                 <input type="text" id="login-id" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-500 transition-all" placeholder="No. Empleado" inputmode="numeric">
                 <input type="password" id="login-pass" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-500 transition-all" placeholder="Contraseña">
                 <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold btn-active shadow-lg shadow-indigo-200">Entrar</button>
-                <button onclick="accessAdminDirect()" class="text-slate-400 text-[11px] font-bold uppercase hover:text-indigo-500 pt-2">Acceso Rápido</button>
+                <button onclick="accessAdminDirect()" class="text-slate-400 text-[11px] font-bold uppercase hover:text-indigo-500 pt-2">Acceso Rápido (Pruebas)</button>
             </div>
         </div>
     </section>
 
     <!-- APLICACIÓN PRINCIPAL -->
     <div id="main-app" class="hidden flex flex-col min-h-screen">
-        <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 px-4 py-3 safe-top">
+        <!-- HEADER ADAPTADO -->
+        <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 px-4 py-3">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex flex-col">
                     <h1 class="text-xl font-black italic tracking-tighter">Gramsoft</h1>
-                    <span id="user-display" class="text-[9px] text-indigo-200 font-bold uppercase">Usuario: -</span>
+                    <span id="user-display" class="text-[9px] text-indigo-200 font-bold uppercase truncate max-w-[80px]">...</span>
                 </div>
-                <nav class="flex items-center gap-1 overflow-x-auto no-scrollbar">
-                    <button onclick="showTab('mesas')" class="px-2.5 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Mesas</button>
-                    <button onclick="showTab('domicilio')" class="px-2.5 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Dom</button>
-                    <button onclick="showTab('cocina')" class="px-2.5 py-2 rounded-xl hover:bg-indigo-600 transition relative text-[10px] font-bold uppercase whitespace-nowrap">
+                <nav class="flex items-center gap-1 overflow-x-auto no-scrollbar ml-2">
+                    <button onclick="showTab('mesas')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Mesas</button>
+                    <button onclick="showTab('domicilio')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Dom</button>
+                    <button onclick="showTab('cocina')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition relative text-[10px] font-bold uppercase whitespace-nowrap">
                         Cocina <span id="cocina-badge" class="absolute -top-1 -right-1 bg-red-500 text-[9px] rounded-full h-4 w-4 flex items-center justify-center hidden border-2 border-indigo-700 font-black">0</span>
                     </button>
-                    <button onclick="showTab('admin')" class="px-2.5 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Admin</button>
-                    <button onclick="logout()" class="ml-1 p-2 bg-indigo-800 rounded-xl btn-active">
+                    <button onclick="showTab('admin')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Admin</button>
+                    <button onclick="logout()" class="ml-1 p-2 bg-indigo-800 rounded-xl btn-active flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
                     </button>
                 </nav>
@@ -95,11 +115,12 @@
                     <h2 class="text-3xl font-black text-slate-800 tracking-tighter">Mesas</h2>
                     <div class="text-[10px] font-black text-slate-400 uppercase bg-slate-100 px-3 py-1.5 rounded-full" id="mesa-count">0 mesas</div>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="grid-mesas"></div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="grid-mesas"></div>
 
                 <!-- MODAL MESA -->
                 <div id="modal-mesa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
-                    <div class="bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl scale-up">
+                    <div class="bg-white modal-content-mobile rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl scale-up">
+                        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden"></div>
                         <div class="flex justify-between items-center mb-4 pb-2 border-b">
                             <h3 id="modal-mesa-titulo" class="text-2xl font-black text-indigo-900 italic">Mesa #</h3>
                             <button onclick="closeMesaModal()" class="bg-slate-100 p-3 rounded-full text-slate-400 btn-active">✕</button>
@@ -136,9 +157,9 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-4">
                         <h4 class="font-black uppercase text-[10px] text-slate-400">Datos del Cliente</h4>
-                        <input type="text" id="dom-nombre" class="w-full p-4 bg-slate-50 border rounded-2xl text-sm" placeholder="Nombre completo">
-                        <input type="text" id="dom-direccion" class="w-full p-4 bg-slate-50 border rounded-2xl text-sm" placeholder="Dirección de entrega">
-                        <input type="tel" id="dom-telefono" class="w-full p-4 bg-slate-50 border rounded-2xl text-sm" placeholder="Teléfono" inputmode="tel">
+                        <input type="text" id="dom-nombre" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm focus:border-indigo-500 transition-all outline-none" placeholder="Nombre completo">
+                        <input type="text" id="dom-direccion" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm focus:border-indigo-500 transition-all outline-none" placeholder="Dirección de entrega">
+                        <input type="tel" id="dom-telefono" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm focus:border-indigo-500 transition-all outline-none" placeholder="Teléfono" inputmode="tel">
                         
                         <h4 class="font-black uppercase text-[10px] text-slate-400 pt-2">Seleccionar Productos</h4>
                         <div id="menu-items-dom" class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1"></div>
@@ -180,70 +201,75 @@
                 <div id="admin-panel" class="hidden space-y-8">
                     <div id="admin-tabs-nav" class="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
                         <button onclick="setAdminTab('ventas')" id="btn-tab-ventas" class="px-6 py-2.5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Ventas</button>
-                        <button onclick="setAdminTab('menu')" id="btn-tab-menu" class="px-6 py-2.5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Menú</button>
-                        <button onclick="setAdminTab('empleados')" id="btn-tab-empleados" class="px-6 py-2.5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Personal</button>
-                        <button onclick="setAdminTab('mesas-config')" id="btn-tab-mesas-config" class="px-6 py-2.5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Mesas</button>
+                        <button onclick="setAdminTab('menu')" id="btn-tab-menu" class="px-6 py-2.5 bg-slate-200 text-slate-600 rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Menú</button>
+                        <button onclick="setAdminTab('mesas-config')" id="btn-tab-mesas-config" class="px-6 py-2.5 bg-slate-200 text-slate-600 rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Mesas</button>
+                        <button onclick="setAdminTab('personal')" id="btn-tab-personal" class="px-6 py-2.5 bg-slate-200 text-slate-600 rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Personal</button>
                     </div>
                     
-                    <!-- VISTAS ADMIN -->
                     <div id="admin-tab-ventas" class="admin-sub-tab">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                            <div class="bg-emerald-600 text-white p-6 rounded-3xl shadow-lg shadow-emerald-100">
-                                <span class="text-[9px] uppercase font-black opacity-80 tracking-widest">Caja Hoy</span>
+                            <div class="bg-emerald-600 text-white p-6 rounded-3xl shadow-lg">
+                                <span class="text-[9px] uppercase font-black opacity-80">Caja Hoy</span>
                                 <div id="admin-ventas-hoy" class="text-3xl font-black">$0.00</div>
                             </div>
-                            <div class="bg-slate-800 text-white p-6 rounded-3xl shadow-lg shadow-slate-100">
-                                <span class="text-[9px] uppercase font-black opacity-80 tracking-widest">Órdenes Realizadas</span>
+                            <div class="bg-slate-800 text-white p-6 rounded-3xl shadow-lg">
+                                <span class="text-[9px] uppercase font-black opacity-80">Órdenes</span>
                                 <div id="admin-ordenes-count" class="text-3xl font-black">0</div>
                             </div>
                         </div>
-                        <div class="bg-white rounded-[2rem] shadow-sm border overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs">
-                                    <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
-                                        <tr><th class="p-4">Hora</th><th class="p-4">Origen</th><th class="p-4">Total</th><th class="p-4">Met.</th></tr>
-                                    </thead>
-                                    <tbody id="lista-ventas"></tbody>
-                                </table>
-                            </div>
+                        <div class="bg-white rounded-[2rem] shadow-sm border overflow-x-auto no-scrollbar">
+                            <table class="w-full text-left text-xs min-w-[400px]">
+                                <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
+                                    <tr><th class="p-4">Hora</th><th class="p-4">Origen</th><th class="p-4">Total</th><th class="p-4">Met.</th></tr>
+                                </thead>
+                                <tbody id="lista-ventas"></tbody>
+                            </table>
                         </div>
                     </div>
 
                     <div id="admin-tab-menu" class="admin-sub-tab hidden space-y-6">
-                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                            <input type="text" id="new-item-nombre" class="w-full p-4 bg-slate-50 border rounded-xl mb-3" placeholder="Nombre del platillo">
+                        <div class="bg-white p-6 rounded-[2rem] border">
+                            <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Nuevo Platillo</h4>
+                            <input type="text" id="new-item-nombre" class="w-full p-4 bg-slate-50 border rounded-xl mb-3 outline-none focus:border-indigo-500" placeholder="Nombre del platillo">
                             <div class="grid grid-cols-2 gap-3 mb-3">
                                 <input type="number" id="new-item-precio" class="p-4 bg-slate-50 border rounded-xl" placeholder="Precio" inputmode="decimal">
-                                <input type="text" id="new-item-v1" class="p-4 bg-slate-50 border rounded-xl" placeholder="Variantes (ej: G, C)">
+                                <input type="text" id="new-item-v1" class="p-4 bg-slate-50 border rounded-xl" placeholder="Variantes (ej. G, C)">
                             </div>
-                            <button onclick="saveMenuItem()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl btn-active">Añadir al Menú</button>
+                            <button onclick="saveMenuItem()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl btn-active">Guardar</button>
                         </div>
                         <div id="admin-lista-menu" class="space-y-2"></div>
                     </div>
 
-                    <div id="admin-tab-empleados" class="admin-sub-tab hidden space-y-6">
-                        <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
-                            <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Añadir Personal</h4>
-                            <input type="text" id="new-emp-nombre" class="w-full p-4 bg-slate-50 border rounded-xl mb-3" placeholder="Nombre">
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <input type="text" id="new-emp-id" class="p-4 bg-slate-50 border rounded-xl" placeholder="No. Emp" inputmode="numeric">
-                                <input type="password" id="new-emp-pass" class="p-4 bg-slate-50 border rounded-xl" placeholder="PIN">
-                            </div>
-                            <button onclick="saveEmpleado()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl btn-active">Guardar Empleado</button>
+                    <div id="admin-tab-mesas-config" class="admin-sub-tab hidden space-y-6">
+                        <div class="bg-white p-6 rounded-[2rem] border text-center">
+                            <button onclick="addMesa()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black btn-active w-full">Añadir Nueva Mesa +</button>
                         </div>
-                        <div id="admin-lista-empleados" class="space-y-2"></div>
+                        <div id="admin-lista-mesas" class="grid grid-cols-1 gap-3"></div>
                     </div>
-                    
-                    <div id="admin-tab-mesas-config" class="admin-sub-tab hidden space-y-4">
-                        <button onclick="addMesa()" class="w-full bg-indigo-600 text-white p-5 rounded-2xl font-black btn-active shadow-lg">Añadir Mesa Nueva</button>
-                        <div id="admin-lista-mesas" class="grid grid-cols-1 gap-2"></div>
+
+                    <div id="admin-tab-personal" class="admin-sub-tab hidden space-y-6">
+                        <div class="bg-white p-6 rounded-[2rem] border">
+                            <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Nuevo Empleado</h4>
+                            <div class="space-y-3 mb-3">
+                                <input type="text" id="new-emp-nombre" class="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Nombre">
+                                <input type="number" id="new-emp-id" class="w-full p-4 bg-slate-50 border rounded-xl" placeholder="No. Empleado" inputmode="numeric">
+                                <input type="password" id="new-emp-pass" class="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Contraseña">
+                                <select id="new-emp-rol" class="w-full p-4 bg-slate-50 border rounded-xl">
+                                    <option value="mesero">Mesero</option>
+                                    <option value="cocina">Cocina</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <button onclick="saveEmpleado()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl btn-active">Registrar Personal</button>
+                        </div>
+                        <div id="admin-lista-personal" class="space-y-2"></div>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- MODALES DE APOYO -->
+    <!-- MODAL CUSTOMIZACIÓN -->
     <div id="modal-custom" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-2xl scale-up text-center">
             <div id="custom-item-name" class="text-2xl font-black mb-2 text-indigo-900 italic"></div>
@@ -251,100 +277,106 @@
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Selecciona Variante</p>
                 <div id="v1-list" class="flex flex-wrap justify-center gap-2"></div>
             </div>
-            <textarea id="custom-nota" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-6 text-sm resize-none" rows="2" placeholder="Ej: Sin cebolla..."></textarea>
+            <textarea id="custom-nota" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-6 text-sm outline-none focus:border-indigo-500" rows="2" placeholder="Nota especial..."></textarea>
             <div class="space-y-2">
-                <button id="btn-confirm-custom" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black btn-active shadow-xl shadow-indigo-100">Agregar al pedido</button>
+                <button id="btn-confirm-custom" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black btn-active">Agregar</button>
                 <button onclick="closeCustomModal()" class="w-full text-slate-400 font-bold text-[10px] uppercase py-2">Cancelar</button>
             </div>
         </div>
     </div>
 
+    <!-- MODAL PAGO -->
     <div id="modal-pago" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-2xl scale-up">
-            <h3 class="text-xl font-black mb-6 text-center uppercase tracking-tighter">Finalizar Venta</h3>
+            <h3 class="text-xl font-black mb-6 text-center uppercase">Cobrar Cuenta</h3>
             <div id="pago-total-display" class="text-5xl font-black text-emerald-600 text-center mb-8 bg-slate-50 py-8 rounded-[2.5rem] tracking-tighter">$0.00</div>
             <div class="grid grid-cols-1 gap-3">
-                <button onclick="procesarPago('Efectivo')" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black btn-active shadow-lg">Efectivo</button>
-                <button onclick="procesarPago('Tarjeta')" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black btn-active shadow-lg">Tarjeta</button>
-                <button onclick="document.getElementById('modal-pago').classList.add('hidden')" class="w-full text-slate-400 py-3 font-bold text-[10px] uppercase">Volver</button>
+                <button onclick="procesarPago('Efectivo')" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black btn-active">Efectivo</button>
+                <button onclick="procesarPago('Tarjeta')" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black btn-active">Tarjeta</button>
             </div>
+            <button onclick="closePagoModal()" class="w-full mt-4 text-slate-400 font-bold text-[10px] uppercase text-center py-2">Regresar</button>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl translate-y-32 transition-transform duration-300 z-[200] font-black text-[10px] uppercase text-center min-w-[240px]"></div>
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl translate-y-32 transition-transform duration-300 z-[200] font-black text-[10px] uppercase text-center min-w-[240px]"></div>
 
     <script>
-        const SB_URL = "https://wnboqxpggbvktrumqcat.supabase.co";
-        const SB_KEY = "sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p"; 
-        const _supabase = supabase.createClient(SB_URL, SB_KEY);
-
-        let menu = [], mesas = [], comandasCocina = [], empleados = [], domPedido = [];
+        // --- VARIABLES Y CONFIG ---
+        let _supabase;
+        let menu = [], mesas = [], comandasCocina = [], empleados = [], domPedido = [], ventas = [];
         let currentMesaId = null, currentTarget = '', pendingItem = null, selectedV1 = null;
         let currentUser = "Empleado";
 
+        window.onload = async () => {
+            try {
+                const SB_URL = "https://wnboqxpggbvktrumqcat.supabase.co";
+                const SB_KEY = "sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p"; 
+                _supabase = supabase.createClient(SB_URL, SB_KEY);
+                await refreshData();
+            } catch (error) {
+                showToast("Error de conexión");
+            }
+        };
+
+        // --- AUTH ---
         async function handleLogin() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
-            if(!id || !pass) return showToast("Ingresa tus credenciales");
-
-            const { data, error } = await _supabase.from('empleados').select('*').eq('numero_empleado', id).eq('password', pass).single();
-            if (data) { currentUser = data.nombre; initApp(); } 
-            else showToast("Usuario o PIN incorrecto");
+            if(!id || !pass) return showToast("Faltan datos");
+            try {
+                const { data } = await _supabase.from('empleados').select('*').eq('numero_empleado', id).eq('password', pass).single();
+                if (data) { currentUser = data.nombre; initApp(); } 
+                else { showToast("Acceso denegado"); }
+            } catch (e) { showToast("Error de acceso"); }
         }
-
         function accessAdminDirect() { currentUser = "Admin"; initApp(); }
-
         async function initApp() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
-            document.getElementById('user-display').innerText = `Usuario: ${currentUser}`;
+            document.getElementById('user-display').innerText = currentUser;
             await refreshData();
             setupRealtime();
         }
 
+        // --- DATA MGMT ---
         async function refreshData() {
             try {
-                const [mResp, msResp, cResp, eResp] = await Promise.all([
+                const [mResp, msResp, cResp, eResp, vResp] = await Promise.all([
                     _supabase.from('menu').select('*').order('nombre'),
                     _supabase.from('mesas').select('*').order('id'),
                     _supabase.from('comandas').select('*').eq('status', 'pendiente').order('created_at'),
-                    _supabase.from('empleados').select('*').order('nombre')
+                    _supabase.from('empleados').select('*').order('nombre'),
+                    _supabase.from('ventas').select('*').order('created_at', { ascending: false }).limit(30)
                 ]);
                 menu = mResp.data || [];
                 mesas = msResp.data || [];
                 comandasCocina = cResp.data || [];
                 empleados = eResp.data || [];
-                
-                renderMesas(); 
-                renderMenuUI('domicilio'); 
-                updateCocinaUI();
+                ventas = vResp.data || [];
+                renderMesas(); renderMenuUI('domicilio'); updateCocinaUI();
+                renderVentasAdmin(); renderMenuAdmin(); renderMesasAdmin(); renderPersonalAdmin();
                 if(currentMesaId) renderPedidoMesa();
-                
-            } catch (e) { console.error("Error refresh:", e); }
+                renderResumenDom();
+            } catch (e) { console.error(e); }
         }
 
         function setupRealtime() {
-            _supabase.channel('restaurante')
-                .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-                    clearTimeout(window.refreshTimer);
-                    window.refreshTimer = setTimeout(refreshData, 500);
-                }).subscribe();
+            _supabase.channel('restaurante').on('postgres_changes', { event: '*', schema: 'public' }, () => {
+                setTimeout(refreshData, 300);
+            }).subscribe();
         }
 
-        function showTab(id) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            window.scrollTo(0, 0);
-        }
-
+        // --- UI RENDERERS ---
         function renderMesas() {
             const grid = document.getElementById('grid-mesas');
+            if(!grid) return;
             document.getElementById('mesa-count').innerText = `${mesas.length} mesas`;
             grid.innerHTML = mesas.map(m => `
-                <div onclick="abrirMesa(${m.id})" class="p-6 rounded-[2.5rem] border-4 text-center transition btn-active ${m.ocupada ? 'bg-orange-50 border-orange-400' : 'bg-white border-slate-100 shadow-sm'}">
-                    <div class="text-[9px] font-black uppercase tracking-widest ${m.ocupada ? 'text-orange-500' : 'text-slate-300'}">${m.ocupada ? 'Ocupada' : 'Libre'}</div>
-                    <div class="text-4xl font-black my-1 text-slate-800">${m.id}</div>
-                    <div class="text-[10px] font-black px-3 py-1 rounded-full ${m.ocupada ? 'bg-orange-200 text-orange-700' : 'bg-slate-100 text-slate-400'}">$${parseFloat(m.total || 0).toFixed(0)}</div>
+                <div onclick="abrirMesa(${m.id})" class="p-5 rounded-[2rem] border-4 text-center transition btn-active ${m.ocupada ? 'bg-orange-50 border-orange-400 shadow-orange-100' : 'bg-white border-slate-100 shadow-sm'}">
+                    <div class="text-[8px] font-black uppercase mb-1 ${m.ocupada ? 'text-orange-500' : 'text-slate-300'}">${m.ocupada ? 'Ocupada' : 'Libre'}</div>
+                    <div class="text-3xl font-black text-slate-800">${m.id}</div>
+                    <div class="text-[9px] font-black mt-2 inline-block px-3 py-1 rounded-full ${m.ocupada ? 'bg-orange-200 text-orange-700' : 'bg-slate-100 text-slate-400'}">$${(m.total || 0).toFixed(2)}</div>
                 </div>`).join('');
         }
 
@@ -352,15 +384,7 @@
             currentMesaId = id;
             document.getElementById('modal-mesa-titulo').innerText = `Mesa ${id}`;
             document.getElementById('modal-mesa').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            renderPedidoMesa(); 
-            renderMenuUI('mesa');
-        }
-
-        function closeMesaModal() {
-            document.getElementById('modal-mesa').classList.add('hidden');
-            document.body.style.overflow = '';
-            currentMesaId = null;
+            renderPedidoMesa(); renderMenuUI('mesa');
         }
 
         function renderPedidoMesa() {
@@ -368,14 +392,13 @@
             if(!mesa) return;
             const ped = [...(mesa.pedido || []), ...(mesa.pedidotemporal || [])];
             document.getElementById('lista-pedido-mesa').innerHTML = ped.length ? ped.map(i => `
-                <li class="p-3 bg-white border rounded-2xl flex justify-between items-center shadow-sm">
-                    <div>
+                <li class="p-4 bg-white border rounded-2xl flex justify-between items-center shadow-sm">
+                    <div class="pr-2 text-left">
                         <span class="text-xs font-black block">${i.nombre}</span>
-                        <span class="text-[9px] text-indigo-500 font-bold uppercase">${i.v1 || 'Estándar'}</span>
-                        ${i.nota ? `<p class="text-[9px] text-slate-400 italic font-medium">"${i.nota}"</p>` : ''}
+                        <span class="text-[9px] text-indigo-500 font-bold uppercase tracking-wider">${i.v1 || 'Estd.'} ${i.nota ? ' • ' + i.nota : ''}</span>
                     </div>
-                    <span class="font-black text-indigo-900">$${i.precio}</span>
-                </li>`).join('') : '<li class="text-center py-4 text-[10px] text-slate-400 font-bold uppercase">Sin productos</li>';
+                    <span class="font-black text-indigo-900 text-sm">$${i.precio.toFixed(2)}</span>
+                </li>`).join('') : '<li class="text-center py-8 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sin productos</li>';
             
             document.getElementById('total-mesa').innerText = `$${parseFloat(mesa.total || 0).toFixed(2)}`;
             document.getElementById('btn-pre-pago').classList.toggle('hidden', !mesa.total || mesa.total <= 0);
@@ -386,271 +409,231 @@
             const containerId = target === 'mesa' ? 'menu-items-mesa' : 'menu-items-dom';
             const targetEl = document.getElementById(containerId);
             if(!targetEl) return;
-            
             targetEl.innerHTML = menu.map(m => `
-                <button type="button" onclick="openCustomModal(${m.id}, '${target}')" class="flex justify-between items-center p-4 border-2 border-slate-50 rounded-2xl font-black text-xs bg-white text-left btn-active shadow-sm w-full">
-                    <span class="tracking-tighter">${m.nombre}</span> 
-                    <span class="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">$${m.precio}</span>
+                <button onclick="openCustomModal(${m.id}, '${target}')" class="flex justify-between items-center p-4 border-2 border-slate-50 rounded-2xl font-black text-xs bg-white text-left btn-active shadow-sm w-full mb-1">
+                    <span>${m.nombre}</span> 
+                    <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">$${m.precio.toFixed(2)}</span>
                 </button>`).join('');
         }
 
+        // --- DOMICILIO LOGIC ---
+        function renderResumenDom() {
+            const total = domPedido.reduce((a, v) => a + v.precio, 0);
+            document.getElementById('lista-pedido-dom').innerHTML = domPedido.map((i, idx) => `
+                <li class="flex justify-between items-center bg-white p-3 rounded-xl border">
+                    <div class="text-left">
+                        <p class="text-[11px] font-black">${i.nombre}</p>
+                        <p class="text-[9px] text-slate-400 font-bold">${i.v1}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-xs">$${i.precio.toFixed(2)}</span>
+                        <button onclick="removeFromDom(${idx})" class="text-red-400 text-xs">✕</button>
+                    </div>
+                </li>
+            `).join('');
+            document.getElementById('total-dom').innerText = `$${total.toFixed(2)}`;
+        }
+        function removeFromDom(idx) { domPedido.splice(idx, 1); renderResumenDom(); }
+
+        async function enviarDomicilio() {
+            const nombre = document.getElementById('dom-nombre').value;
+            const direccion = document.getElementById('dom-direccion').value;
+            const tel = document.getElementById('dom-telefono').value;
+            if(!nombre || !direccion || !domPedido.length) return showToast("Datos incompletos");
+            
+            const total = domPedido.reduce((a, v) => a + v.precio, 0);
+            await _supabase.from('comandas').insert({ origen: `Domicilio: ${nombre}`, items: domPedido, status: 'pendiente' });
+            await _supabase.from('ventas').insert({ origen: `Domicilio: ${nombre}`, total, metodo: 'Pendiente', detalles: domPedido });
+            
+            domPedido = [];
+            document.getElementById('dom-nombre').value = '';
+            document.getElementById('dom-direccion').value = '';
+            document.getElementById('dom-telefono').value = '';
+            showToast("Pedido enviado");
+            renderResumenDom(); refreshData();
+        }
+
+        // --- COCINA LOGIC ---
+        function updateCocinaUI() {
+            const b = document.getElementById('cocina-badge');
+            b.innerText = comandasCocina.length;
+            b.classList.toggle('hidden', !comandasCocina.length);
+            document.getElementById('lista-cocina').innerHTML = comandasCocina.map(c => `
+                <div class="bg-white rounded-[2.5rem] border-t-8 border-indigo-700 p-6 shadow-md scale-up">
+                    <div class="flex justify-between items-start mb-4">
+                        <h4 class="font-black text-xs uppercase text-indigo-900">${c.origen}</h4>
+                        <span class="text-[9px] font-bold text-slate-400">${new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <ul class="text-[11px] mb-6 space-y-2 border-b border-slate-50 pb-4">
+                        ${c.items.map(i => `<li class="flex flex-col"><span class="font-black text-slate-700 text-left">• ${i.nombre}</span><span class="text-[9px] text-indigo-400 font-bold pl-3 uppercase text-left">${i.v1} ${i.nota ? '| ' + i.nota : ''}</span></li>`).join('')}
+                    </ul>
+                    <button onclick="completarOrden(${c.id})" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black btn-active shadow-lg shadow-indigo-100">MARCAR LISTO</button>
+                </div>`).join('');
+        }
+        async function completarOrden(id) { await _supabase.from('comandas').update({ status: 'listo' }).eq('id', id); refreshData(); }
+
+        // --- ADMIN HELPERS ---
+        function checkAdminAccess() {
+            const pin = document.getElementById('admin-pin').value;
+            // PIN por defecto 1234 para propósitos de prueba o validación contra DB
+            if(pin === '1234' || currentUser === 'Admin') {
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                showToast("Acceso Concedido");
+            } else {
+                showToast("PIN Incorrecto");
+                document.getElementById('admin-pin').value = '';
+            }
+        }
+
+        function setAdminTab(tab) {
+            document.querySelectorAll('.admin-sub-tab').forEach(t => t.classList.add('hidden'));
+            document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+            document.querySelectorAll('#admin-tabs-nav button').forEach(b => {
+                b.classList.remove('bg-indigo-600', 'text-white'); b.classList.add('bg-slate-200', 'text-slate-600');
+            });
+            const activeBtn = document.getElementById(`btn-tab-${tab}`);
+            activeBtn.classList.replace('bg-slate-200', 'bg-indigo-600'); activeBtn.classList.replace('text-slate-600', 'text-white');
+        }
+
+        async function addMesa() {
+            const nextId = mesas.length > 0 ? Math.max(...mesas.map(m => m.id)) + 1 : 1;
+            await _supabase.from('mesas').insert({ id: nextId, total: 0, ocupada: false, pedido: [], pedidotemporal: [] });
+            refreshData();
+        }
+
+        async function deleteMesa(id) {
+            const m = mesas.find(x => x.id == id);
+            if(m && m.ocupada) return showToast("Mesa ocupada");
+            await _supabase.from('mesas').delete().eq('id', id);
+            refreshData();
+        }
+
+        // --- GLOBAL UTILS ---
         function openCustomModal(itemId, target) {
             currentTarget = target;
             pendingItem = menu.find(m => m.id === itemId);
             selectedV1 = null;
+            document.getElementById('custom-nota').value = "";
             document.getElementById('custom-item-name').innerText = pendingItem.nombre;
-            document.getElementById('v1-list').innerHTML = (pendingItem.v1 || []).map(v => `
-                <button type="button" onclick="selectV1(this, '${v}')" class="px-5 py-3 bg-slate-100 rounded-xl text-[11px] font-black uppercase transition-all touch-manipulation">${v}</button>
-            `).join('');
-            document.getElementById('custom-nota').value = '';
+            const variants = (pendingItem.v1 || "").split(',').filter(v => v.trim() !== "");
+            document.getElementById('v1-list').innerHTML = variants.map(v => `
+                <button onclick="selectV1(this, '${v.trim()}')" class="px-5 py-3 bg-slate-100 rounded-xl text-[11px] font-black uppercase btn-active">${v.trim()}</button>
+            `).join('') || '<p class="text-[9px] text-slate-300">Estándar</p>';
             document.getElementById('modal-custom').classList.remove('hidden');
         }
 
         function selectV1(el, val) { 
             document.querySelectorAll('#v1-list button').forEach(b => b.classList.remove('variant-selected')); 
-            el.classList.add('variant-selected'); 
-            selectedV1 = val; 
+            el.classList.add('variant-selected'); selectedV1 = val; 
         }
 
-        // Lógica de confirmación optimizada
         document.getElementById('btn-confirm-custom').onclick = async function() {
-            if(!pendingItem) return;
-            
-            const item = { 
-                nombre: pendingItem.nombre, 
-                precio: parseFloat(pendingItem.precio), 
-                v1: selectedV1 || 'Estándar', 
-                nota: document.getElementById('custom-nota').value.trim()
-            };
-
-            try {
-                if(currentTarget === 'mesa') {
-                    const mesaIdx = mesas.findIndex(m => m.id == currentMesaId);
-                    if(mesaIdx === -1) return;
-                    
-                    const mesa = mesas[mesaIdx];
-                    const nTemporal = Array.isArray(mesa.pedidotemporal) ? [...mesa.pedidotemporal, item] : [item];
-                    const nuevoTotal = parseFloat(mesa.total || 0) + item.precio;
-
-                    const { error } = await _supabase.from('mesas')
-                        .update({ total: nuevoTotal, pedidotemporal: nTemporal })
-                        .eq('id', currentMesaId);
-                    
-                    if(error) throw error;
-                    showToast("Agregado a mesa");
-                } else {
-                    domPedido.push(item);
-                    renderPedidoDom();
-                    showToast("Agregado a domicilio");
-                }
-                closeCustomModal();
-            } catch (err) {
-                console.error("Error al agregar:", err);
-                showToast("Error al guardar producto");
+            const item = { nombre: pendingItem.nombre, precio: pendingItem.precio, v1: selectedV1 || 'Estándar', nota: document.getElementById('custom-nota').value };
+            if(currentTarget === 'mesa') {
+                const m = mesas.find(m => m.id == currentMesaId);
+                const nT = [...(m.pedidotemporal || []), item];
+                await _supabase.from('mesas').update({ total: (m.total || 0) + item.precio, pedidotemporal: nT, ocupada: true }).eq('id', currentMesaId);
+            } else {
+                domPedido.push(item);
+                renderResumenDom();
             }
+            closeCustomModal(); refreshData();
         };
 
-        function closeCustomModal() { document.getElementById('modal-custom').classList.add('hidden'); }
-
-        function renderPedidoDom() {
-            const list = document.getElementById('lista-pedido-dom');
-            list.innerHTML = domPedido.map((i, idx) => `
-                <li class="flex justify-between items-center bg-white p-3 rounded-xl border border-indigo-100">
-                    <span class="text-xs font-bold">${i.nombre} <small class="text-indigo-400 uppercase">(${i.v1})</small></span>
-                    <button onclick="removeDomItem(${idx})" class="text-red-400 text-xs p-1">✕</button>
-                </li>`).join('');
-            const total = domPedido.reduce((s, i) => s + i.precio, 0);
-            document.getElementById('total-dom').innerText = `$${total.toFixed(2)}`;
-        }
-
-        function removeDomItem(idx) { domPedido.splice(idx, 1); renderPedidoDom(); }
-
-        async function enviarDomicilio() {
-            const nom = document.getElementById('dom-nombre').value;
-            const dir = document.getElementById('dom-direccion').value;
-            if(!nom || !dir || !domPedido.length) return showToast("Faltan datos o productos");
-            const total = domPedido.reduce((s, i) => s + i.precio, 0);
-            await _supabase.from('comandas').insert({ origen: `DOM: ${nom}`, items: domPedido });
-            await _supabase.from('ventas').insert({ 
-                mesa_id: 0, total, metodo_pago: 'Pendiente (Dom)', items: domPedido, usuario: currentUser, cliente: `${nom} - ${dir}`
-            });
-            domPedido = [];
-            document.getElementById('dom-nombre').value = '';
-            document.getElementById('dom-direccion').value = '';
-            renderPedidoDom();
-            showToast("Pedido enviado");
-            showTab('mesas');
-        }
-
-        function updateCocinaUI() {
-            const badge = document.getElementById('cocina-badge');
-            badge.innerText = comandasCocina.length;
-            badge.classList.toggle('hidden', !comandasCocina.length);
-            document.getElementById('lista-cocina').innerHTML = comandasCocina.map(c => `
-                <div class="bg-white rounded-[2rem] border-t-8 border-indigo-700 p-6 shadow-md scale-up">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="font-black text-xs text-indigo-900 uppercase tracking-tighter">${c.origen}</h4>
-                        <span class="text-[8px] font-bold text-slate-300">${new Date(c.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <ul class="text-[11px] space-y-3 mb-6 font-medium text-slate-700">
-                        ${c.items.map(i => `
-                            <li><b>${i.nombre}</b> <span class="text-indigo-400 font-bold uppercase text-[9px]">${i.v1}</span></li>`).join('')}
-                    </ul>
-                    <button onclick="completarOrden(${c.id})" class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-black btn-active">ENTREGADO</button>
-                </div>`).join('');
-        }
-
-        async function completarOrden(id) {
-            await _supabase.from('comandas').update({ status: 'listo' }).eq('id', id);
-            showToast("Orden lista");
-        }
-
         async function enviarCocinaMesa() {
-            const mesa = mesas.find(m => m.id == currentMesaId);
-            if(!mesa || !mesa.pedidotemporal?.length) return;
-            
-            try {
-                await _supabase.from('comandas').insert({ origen: `Mesa ${mesa.id}`, items: mesa.pedidotemporal });
-                await _supabase.from('mesas').update({ 
-                    ocupada: true, 
-                    pedido: [...(mesa.pedido || []), ...mesa.pedidotemporal], 
-                    pedidotemporal: [] 
-                }).eq('id', mesa.id);
-                showToast("Enviado a cocina");
-            } catch (e) {
-                showToast("Error al enviar pedido");
-            }
-        }
-
-        function mostrarInterfazPago() {
-            const mesa = mesas.find(m => m.id == currentMesaId);
-            document.getElementById('pago-total-display').innerText = `$${parseFloat(mesa.total).toFixed(2)}`;
-            document.getElementById('modal-pago').classList.remove('hidden');
+            const m = mesas.find(m => m.id == currentMesaId);
+            if(!m || !m.pedidotemporal.length) return;
+            await _supabase.from('comandas').insert({ origen: `Mesa ${m.id}`, items: m.pedidotemporal, status: 'pendiente' });
+            await _supabase.from('mesas').update({ pedido: [...(m.pedido || []), ...m.pedidotemporal], pedidotemporal: [] }).eq('id', m.id);
+            showToast("Enviado a cocina"); refreshData();
         }
 
         async function procesarPago(metodo) {
-            const mesa = mesas.find(m => m.id == currentMesaId);
-            await _supabase.from('ventas').insert({ 
-                mesa_id: mesa.id, total: mesa.total, metodo_pago: metodo, items: mesa.pedido, usuario: currentUser 
-            });
-            await _supabase.from('mesas').update({ ocupada: false, pedido: [], pedidotemporal: [], total: 0 }).eq('id', mesa.id);
-            document.getElementById('modal-pago').classList.add('hidden');
-            closeMesaModal();
-            showToast("Cobro realizado");
+            const m = mesas.find(m => m.id == currentMesaId);
+            await _supabase.from('ventas').insert({ origen: `Mesa ${m.id}`, total: m.total, metodo, detalles: m.pedido });
+            await _supabase.from('mesas').update({ total: 0, ocupada: false, pedido: [], pedidotemporal: [] }).eq('id', m.id);
+            closePagoModal(); closeMesaModal(); showToast("Venta registrada"); refreshData();
         }
 
-        function checkAdminAccess() {
-            if(document.getElementById('admin-pin').value === '1234') {
-                document.getElementById('admin-login-box').classList.add('hidden');
-                document.getElementById('admin-panel').classList.remove('hidden');
-                setAdminTab('ventas');
-            } else {
-                showToast("PIN incorrecto");
-            }
+        function closeCustomModal() { document.getElementById('modal-custom').classList.add('hidden'); }
+        function closeMesaModal() { document.getElementById('modal-mesa').classList.add('hidden'); currentMesaId = null; }
+        function closePagoModal() { document.getElementById('modal-pago').classList.add('hidden'); }
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+        function showToast(m) {
+            const t = document.getElementById('toast'); 
+            t.innerText = m; t.classList.remove('translate-y-32');
+            setTimeout(() => t.classList.add('translate-y-32'), 2500);
+        }
+        function logout() { location.reload(); }
+        function mostrarInterfazPago() {
+            const m = mesas.find(m => m.id == currentMesaId);
+            document.getElementById('pago-total-display').innerText = `$${m.total.toFixed(2)}`;
+            document.getElementById('modal-pago').classList.remove('hidden');
         }
 
-        function setAdminTab(name) {
-            const targetSection = document.getElementById(`admin-tab-${name}`);
-            const targetBtn = document.getElementById(`btn-tab-${name}`);
-            if (!targetSection) return;
-
-            document.querySelectorAll('.admin-sub-tab').forEach(t => t.classList.add('hidden'));
-            document.querySelectorAll('#admin-tabs-nav button').forEach(b => {
-                b.classList.remove('bg-slate-900');
-                b.classList.add('bg-indigo-600');
-            });
-            
-            targetSection.classList.remove('hidden');
-            if (targetBtn) targetBtn.classList.replace('bg-indigo-600', 'bg-slate-900');
-            
-            if(name === 'ventas') loadVentas();
-            if(name === 'menu') renderAdminMenu();
-            if(name === 'empleados') renderAdminEmpleados();
-            if(name === 'mesas-config') renderAdminMesas();
-        }
-
-        async function loadVentas() {
-            const hoy = new Date().toISOString().split('T')[0];
-            const { data } = await _supabase.from('ventas').select('*').gte('created_at', hoy).order('created_at', {ascending: false});
-            const total = (data || []).reduce((s, v) => s + parseFloat(v.total), 0);
+        function renderVentasAdmin() {
+            const total = ventas.reduce((a, v) => a + (v.total || 0), 0);
             document.getElementById('admin-ventas-hoy').innerText = `$${total.toFixed(2)}`;
-            document.getElementById('admin-ordenes-count').innerText = data?.length || 0;
-            document.getElementById('lista-ventas').innerHTML = (data || []).map(v => `
-                <tr class="border-b">
-                    <td class="p-4 text-slate-400">${new Date(v.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                    <td class="p-4 font-black">${v.mesa_id == 0 ? 'DOM' : 'M'+v.mesa_id}</td>
-                    <td class="p-4 font-black text-emerald-600">$${v.total}</td>
-                    <td class="p-4 text-[8px] uppercase">${v.metodo_pago}</td>
-                </tr>`).join('');
+            document.getElementById('admin-ordenes-count').innerText = ventas.length;
+            document.getElementById('lista-ventas').innerHTML = ventas.map(v => `
+                <tr class="border-b text-[10px]"><td class="p-3 font-bold">${new Date(v.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td><td class="p-3 uppercase text-left">${v.origen}</td><td class="p-3 font-black text-indigo-700 text-left">$${v.total.toFixed(2)}</td><td class="p-3 text-left">${v.metodo}</td></tr>
+            `).join('');
         }
 
-        function renderAdminMenu() {
+        function renderMesasAdmin() {
+            document.getElementById('admin-lista-mesas').innerHTML = mesas.map(m => `
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
+                    <span class="font-black text-xs uppercase text-left">Mesa #${m.id}</span>
+                    <button onclick="deleteMesa(${m.id})" class="text-red-500 font-bold text-[10px] uppercase p-2 hover:bg-red-50 rounded-xl">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        function renderPersonalAdmin() {
+            document.getElementById('admin-lista-personal').innerHTML = empleados.map(e => `
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
+                    <div class="text-left">
+                        <div class="font-black text-xs">${e.nombre}</div>
+                        <div class="text-[9px] text-slate-400 uppercase">ID: ${e.numero_empleado} | ${e.rol}</div>
+                    </div>
+                    <button onclick="deleteEmpleado(${e.id})" class="text-red-400 p-2">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function renderMenuAdmin() {
             document.getElementById('admin-lista-menu').innerHTML = menu.map(m => `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center border shadow-sm">
-                    <div><b class="text-sm">${m.nombre}</b> <span class="text-[10px] text-indigo-500">$${m.precio}</span></div>
-                    <button onclick="deleteItem('menu', ${m.id})" class="text-red-400 font-black text-[10px] uppercase">Borrar</button>
-                </div>`).join('');
-        }
-
-        async function saveMenuItem() {
-            const nombre = document.getElementById('new-item-nombre').value;
-            const precio = document.getElementById('new-item-precio').value;
-            const v1Input = document.getElementById('new-item-v1').value;
-            const v1 = v1Input ? v1Input.split(',').map(v => v.trim()).filter(v => v) : [];
-            if(!nombre || !precio) return showToast("Faltan datos");
-            await _supabase.from('menu').insert({ nombre, precio: parseFloat(precio), v1 });
-            refreshData();
-            showToast("Guardado");
-        }
-
-        function renderAdminEmpleados() {
-            const list = document.getElementById('admin-lista-empleados');
-            if(!list) return;
-            list.innerHTML = empleados.map(e => `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
-                    <div><b class="text-sm">${e.nombre}</b> <span class="text-[10px] text-slate-400">#${e.numero_empleado}</span></div>
-                    <button onclick="deleteItem('empleados', ${e.id})" class="text-red-400 font-black text-[10px] uppercase">Eliminar</button>
-                </div>`).join('');
+                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border mb-2">
+                    <span class="text-xs font-black uppercase text-left">${m.nombre} <span class="text-indigo-500 font-bold">($${m.precio})</span></span>
+                    <button onclick="deleteMenuItem(${m.id})" class="text-red-400 p-2">✕</button>
+                </div>
+            `).join('');
         }
 
         async function saveEmpleado() {
             const nombre = document.getElementById('new-emp-nombre').value;
-            const num = document.getElementById('new-emp-id').value;
-            const pin = document.getElementById('new-emp-pass').value;
-            if(!nombre || !num || !pin) return showToast("Faltan datos");
-            await _supabase.from('empleados').insert({ nombre, numero_empleado: num, password: pin });
-            refreshData();
-            showToast("Empleado guardado");
-        }
-
-        function renderAdminMesas() {
-            document.getElementById('admin-lista-mesas').innerHTML = mesas.map(m => `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center border">
-                    <b class="text-sm">Mesa # ${m.id}</b>
-                    <button onclick="deleteItem('mesas', ${m.id})" class="text-red-400 text-[10px] font-black uppercase">Eliminar</button>
-                </div>`).join('');
-        }
-
-        async function addMesa() {
-            const nextId = mesas.length > 0 ? Math.max(...mesas.map(m => m.id)) + 1 : 1;
-            await _supabase.from('mesas').insert({ id: nextId, ocupada: false, total: 0 });
+            const numero_empleado = document.getElementById('new-emp-id').value;
+            const password = document.getElementById('new-emp-pass').value;
+            const rol = document.getElementById('new-emp-rol').value;
+            if(!nombre || !numero_empleado || !password) return showToast("Faltan campos");
+            await _supabase.from('empleados').insert({ nombre, numero_empleado, password, rol });
             refreshData();
         }
 
-        async function deleteItem(table, id) {
-            if(!confirm("¿Confirmas?")) return;
-            await _supabase.from(table).delete().eq('id', id);
+        async function deleteEmpleado(id) { if(confirm("¿Eliminar?")) { await _supabase.from('empleados').delete().eq('id', id); refreshData(); } }
+        async function saveMenuItem() {
+            const nombre = document.getElementById('new-item-nombre').value;
+            const precio = parseFloat(document.getElementById('new-item-precio').value);
+            const v1 = document.getElementById('new-item-v1').value;
+            if(!nombre || isNaN(precio)) return showToast("Datos inválidos");
+            await _supabase.from('menu').insert({ nombre, precio, v1 });
             refreshData();
         }
-
-        function showToast(m) {
-            const t = document.getElementById('toast'); 
-            t.innerText = m; 
-            t.classList.remove('translate-y-32');
-            setTimeout(() => t.classList.add('translate-y-32'), 2500);
-        }
-
-        function logout() { location.reload(); }
+        async function deleteMenuItem(id) { if(confirm("¿Eliminar?")) { await _supabase.from('menu').delete().eq('id', id); refreshData(); } }
     </script>
 </body>
 </html>
