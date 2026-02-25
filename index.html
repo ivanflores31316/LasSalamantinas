@@ -26,11 +26,9 @@
             padding-bottom: var(--safe-bottom);
         }
 
-        /* Tabs Logic */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        /* Animations */
         .scale-up { animation: scaleUp 0.15s ease-out; }
         @keyframes scaleUp {
             from { transform: scale(0.96); opacity: 0; }
@@ -43,7 +41,6 @@
             border-color: var(--primary-dark) !important; 
         }
 
-        /* Mobile specific inputs */
         input, textarea, select { 
             font-size: 16px !important; 
             appearance: none;
@@ -51,20 +48,19 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Touch feedback */
         .btn-active:active { 
             transform: scale(0.95); 
             opacity: 0.8; 
             transition: transform 0.1s ease;
         }
         
-        /* Bottom Sheet for Mobile */
         @media (max-width: 640px) {
             .modal-content-mobile {
                 border-radius: 2.5rem 2.5rem 0 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 margin-bottom: 0 !important;
+                padding-bottom: calc(2rem + var(--safe-bottom)) !important;
             }
         }
     </style>
@@ -87,7 +83,6 @@
 
     <!-- APLICACIÓN PRINCIPAL -->
     <div id="main-app" class="hidden flex flex-col min-h-screen">
-        <!-- HEADER ADAPTADO -->
         <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 px-4 py-3">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex flex-col">
@@ -117,7 +112,7 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="grid-mesas"></div>
 
-                <!-- MODAL MESA -->
+                <!-- MODAL MESA (Mejorado para Celular) -->
                 <div id="modal-mesa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
                     <div class="bg-white modal-content-mobile rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl scale-up">
                         <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden"></div>
@@ -302,7 +297,6 @@
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl translate-y-32 transition-transform duration-300 z-[200] font-black text-[10px] uppercase text-center min-w-[240px]"></div>
 
     <script>
-        // --- VARIABLES Y CONFIG ---
         let _supabase;
         let menu = [], mesas = [], comandasCocina = [], empleados = [], domPedido = [], ventas = [];
         let currentMesaId = null, currentTarget = '', pendingItem = null, selectedV1 = null;
@@ -319,7 +313,6 @@
             }
         };
 
-        // --- AUTH ---
         async function handleLogin() {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
@@ -330,7 +323,9 @@
                 else { showToast("Acceso denegado"); }
             } catch (e) { showToast("Error de acceso"); }
         }
+
         function accessAdminDirect() { currentUser = "Admin"; initApp(); }
+        
         async function initApp() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
@@ -339,7 +334,6 @@
             setupRealtime();
         }
 
-        // --- DATA MGMT ---
         async function refreshData() {
             try {
                 const [mResp, msResp, cResp, eResp, vResp] = await Promise.all([
@@ -367,7 +361,6 @@
             }).subscribe();
         }
 
-        // --- UI RENDERERS ---
         function renderMesas() {
             const grid = document.getElementById('grid-mesas');
             if(!grid) return;
@@ -384,7 +377,8 @@
             currentMesaId = id;
             document.getElementById('modal-mesa-titulo').innerText = `Mesa ${id}`;
             document.getElementById('modal-mesa').classList.remove('hidden');
-            renderPedidoMesa(); renderMenuUI('mesa');
+            renderPedidoMesa(); 
+            renderMenuUI('mesa');
         }
 
         function renderPedidoMesa() {
@@ -405,40 +399,96 @@
             document.getElementById('btn-cocina-mesa').classList.toggle('hidden', !mesa.pedidotemporal?.length);
         }
 
+        // FIX: Se agregó soporte para eventos táctiles específicos en celulares
         function renderMenuUI(target) {
             const containerId = target === 'mesa' ? 'menu-items-mesa' : 'menu-items-dom';
             const targetEl = document.getElementById(containerId);
             if(!targetEl) return;
+            
             targetEl.innerHTML = menu.map(m => `
-                <button onclick="openCustomModal(${m.id}, '${target}')" class="flex justify-between items-center p-4 border-2 border-slate-50 rounded-2xl font-black text-xs bg-white text-left btn-active shadow-sm w-full mb-1">
-                    <span>${m.nombre}</span> 
-                    <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">$${m.precio.toFixed(2)}</span>
+                <button type="button" 
+                        onmousedown="this.style.opacity='0.6'" 
+                        onmouseup="this.style.opacity='1'" 
+                        onclick="openCustomModal(${m.id}, '${target}')" 
+                        class="flex justify-between items-center p-5 border-2 border-slate-50 rounded-2xl font-black text-sm bg-white text-left btn-active shadow-sm w-full mb-2">
+                    <span class="pointer-events-none">${m.nombre}</span> 
+                    <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl pointer-events-none">$${m.precio.toFixed(2)}</span>
                 </button>`).join('');
         }
 
-        // --- DOMICILIO LOGIC ---
+        function openCustomModal(itemId, target) {
+            currentTarget = target;
+            pendingItem = menu.find(m => m.id === itemId);
+            selectedV1 = null;
+            document.getElementById('custom-nota').value = "";
+            document.getElementById('custom-item-name').innerText = pendingItem.nombre;
+            
+            const variants = (pendingItem.v1 || "").split(',').filter(v => v.trim() !== "");
+            document.getElementById('v1-list').innerHTML = variants.map(v => `
+                <button onclick="selectV1(this, '${v.trim()}')" class="px-6 py-4 bg-slate-100 rounded-xl text-[11px] font-black uppercase btn-active">${v.trim()}</button>
+            `).join('') || '<p class="text-[9px] text-slate-300">Estándar</p>';
+            
+            document.getElementById('modal-custom').classList.remove('hidden');
+        }
+
+        function selectV1(el, val) { 
+            document.querySelectorAll('#v1-list button').forEach(b => b.classList.remove('variant-selected')); 
+            el.classList.add('variant-selected'); selectedV1 = val; 
+        }
+
+        document.getElementById('btn-confirm-custom').onclick = async function() {
+            if(!pendingItem) return;
+            
+            const item = { 
+                nombre: pendingItem.nombre, 
+                precio: pendingItem.precio, 
+                v1: selectedV1 || 'Estándar', 
+                nota: document.getElementById('custom-nota').value 
+            };
+
+            if(currentTarget === 'mesa') {
+                const m = mesas.find(m => m.id == currentMesaId);
+                const nT = [...(m.pedidotemporal || []), item];
+                const { error } = await _supabase.from('mesas')
+                    .update({ 
+                        total: (m.total || 0) + item.precio, 
+                        pedidotemporal: nT, 
+                        ocupada: true 
+                    })
+                    .eq('id', currentMesaId);
+                
+                if(error) showToast("Error al guardar");
+            } else {
+                domPedido.push(item);
+                renderResumenDom();
+            }
+            
+            closeCustomModal(); 
+            await refreshData();
+        };
+
         function renderResumenDom() {
             const total = domPedido.reduce((a, v) => a + v.precio, 0);
             document.getElementById('lista-pedido-dom').innerHTML = domPedido.map((i, idx) => `
-                <li class="flex justify-between items-center bg-white p-3 rounded-xl border">
+                <li class="flex justify-between items-center bg-white p-4 rounded-xl border mb-2 shadow-sm">
                     <div class="text-left">
                         <p class="text-[11px] font-black">${i.nombre}</p>
-                        <p class="text-[9px] text-slate-400 font-bold">${i.v1}</p>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">${i.v1}</p>
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-black text-xs">$${i.precio.toFixed(2)}</span>
-                        <button onclick="removeFromDom(${idx})" class="text-red-400 text-xs">✕</button>
+                        <button onclick="removeFromDom(${idx})" class="p-2 text-red-400 text-xs">✕</button>
                     </div>
                 </li>
             `).join('');
             document.getElementById('total-dom').innerText = `$${total.toFixed(2)}`;
         }
+
         function removeFromDom(idx) { domPedido.splice(idx, 1); renderResumenDom(); }
 
         async function enviarDomicilio() {
             const nombre = document.getElementById('dom-nombre').value;
             const direccion = document.getElementById('dom-direccion').value;
-            const tel = document.getElementById('dom-telefono').value;
             if(!nombre || !direccion || !domPedido.length) return showToast("Datos incompletos");
             
             const total = domPedido.reduce((a, v) => a + v.precio, 0);
@@ -453,7 +503,6 @@
             renderResumenDom(); refreshData();
         }
 
-        // --- COCINA LOGIC ---
         function updateCocinaUI() {
             const b = document.getElementById('cocina-badge');
             b.innerText = comandasCocina.length;
@@ -465,17 +514,16 @@
                         <span class="text-[9px] font-bold text-slate-400">${new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
                     <ul class="text-[11px] mb-6 space-y-2 border-b border-slate-50 pb-4">
-                        ${c.items.map(i => `<li class="flex flex-col"><span class="font-black text-slate-700 text-left">• ${i.nombre}</span><span class="text-[9px] text-indigo-400 font-bold pl-3 uppercase text-left">${i.v1} ${i.nota ? '| ' + i.nota : ''}</span></li>`).join('')}
+                        ${c.items.map(i => `<li class="flex flex-col text-left"><span class="font-black text-slate-700">• ${i.nombre}</span><span class="text-[9px] text-indigo-400 font-bold pl-3 uppercase">${i.v1} ${i.nota ? '| ' + i.nota : ''}</span></li>`).join('')}
                     </ul>
                     <button onclick="completarOrden(${c.id})" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black btn-active shadow-lg shadow-indigo-100">MARCAR LISTO</button>
                 </div>`).join('');
         }
+
         async function completarOrden(id) { await _supabase.from('comandas').update({ status: 'listo' }).eq('id', id); refreshData(); }
 
-        // --- ADMIN HELPERS ---
         function checkAdminAccess() {
             const pin = document.getElementById('admin-pin').value;
-            // PIN por defecto 1234 para propósitos de prueba o validación contra DB
             if(pin === '1234' || currentUser === 'Admin') {
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-panel').classList.remove('hidden');
@@ -495,51 +543,6 @@
             const activeBtn = document.getElementById(`btn-tab-${tab}`);
             activeBtn.classList.replace('bg-slate-200', 'bg-indigo-600'); activeBtn.classList.replace('text-slate-600', 'text-white');
         }
-
-        async function addMesa() {
-            const nextId = mesas.length > 0 ? Math.max(...mesas.map(m => m.id)) + 1 : 1;
-            await _supabase.from('mesas').insert({ id: nextId, total: 0, ocupada: false, pedido: [], pedidotemporal: [] });
-            refreshData();
-        }
-
-        async function deleteMesa(id) {
-            const m = mesas.find(x => x.id == id);
-            if(m && m.ocupada) return showToast("Mesa ocupada");
-            await _supabase.from('mesas').delete().eq('id', id);
-            refreshData();
-        }
-
-        // --- GLOBAL UTILS ---
-        function openCustomModal(itemId, target) {
-            currentTarget = target;
-            pendingItem = menu.find(m => m.id === itemId);
-            selectedV1 = null;
-            document.getElementById('custom-nota').value = "";
-            document.getElementById('custom-item-name').innerText = pendingItem.nombre;
-            const variants = (pendingItem.v1 || "").split(',').filter(v => v.trim() !== "");
-            document.getElementById('v1-list').innerHTML = variants.map(v => `
-                <button onclick="selectV1(this, '${v.trim()}')" class="px-5 py-3 bg-slate-100 rounded-xl text-[11px] font-black uppercase btn-active">${v.trim()}</button>
-            `).join('') || '<p class="text-[9px] text-slate-300">Estándar</p>';
-            document.getElementById('modal-custom').classList.remove('hidden');
-        }
-
-        function selectV1(el, val) { 
-            document.querySelectorAll('#v1-list button').forEach(b => b.classList.remove('variant-selected')); 
-            el.classList.add('variant-selected'); selectedV1 = val; 
-        }
-
-        document.getElementById('btn-confirm-custom').onclick = async function() {
-            const item = { nombre: pendingItem.nombre, precio: pendingItem.precio, v1: selectedV1 || 'Estándar', nota: document.getElementById('custom-nota').value };
-            if(currentTarget === 'mesa') {
-                const m = mesas.find(m => m.id == currentMesaId);
-                const nT = [...(m.pedidotemporal || []), item];
-                await _supabase.from('mesas').update({ total: (m.total || 0) + item.precio, pedidotemporal: nT, ocupada: true }).eq('id', currentMesaId);
-            } else {
-                domPedido.push(item);
-                renderResumenDom();
-            }
-            closeCustomModal(); refreshData();
-        };
 
         async function enviarCocinaMesa() {
             const m = mesas.find(m => m.id == currentMesaId);
@@ -634,6 +637,17 @@
             refreshData();
         }
         async function deleteMenuItem(id) { if(confirm("¿Eliminar?")) { await _supabase.from('menu').delete().eq('id', id); refreshData(); } }
+        async function addMesa() {
+            const nextId = mesas.length > 0 ? Math.max(...mesas.map(m => m.id)) + 1 : 1;
+            await _supabase.from('mesas').insert({ id: nextId, total: 0, ocupada: false, pedido: [], pedidotemporal: [] });
+            refreshData();
+        }
+        async function deleteMesa(id) {
+            const m = mesas.find(x => x.id == id);
+            if(m && m.ocupada) return showToast("Mesa ocupada");
+            await _supabase.from('mesas').delete().eq('id', id);
+            refreshData();
+        }
     </script>
 </body>
 </html>
