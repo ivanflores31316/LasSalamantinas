@@ -35,17 +35,24 @@
 
         input, textarea, select { font-size: 16px !important; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .btn-active:active { transform: scale(0.95); opacity: 0.9; }
-
+        
+        /* Mejoras táctiles para móviles */
+        .btn-active:active { transform: scale(0.95); opacity: 0.8; }
+        
         .scroll-container {
             -webkit-overflow-scrolling: touch;
             overflow-y: auto;
+        }
+
+        /* Prevenir que el zoom afecte el diseño en inputs */
+        @media screen and (max-width: 768px) {
+            input, textarea { font-size: 16px !important; }
         }
     </style>
 </head>
 <body class="text-slate-800 antialiased">
 
-    <!-- LOGIN -->
+    <!-- PANTALLA DE INICIO DE SESIÓN -->
     <section id="login-screen" class="fixed inset-0 bg-indigo-900 flex items-center justify-center z-[100] p-6">
         <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm scale-up text-center">
             <h1 class="text-4xl font-black text-indigo-700 italic tracking-tighter mb-1">Gramsoft</h1>
@@ -59,7 +66,7 @@
         </div>
     </section>
 
-    <!-- APP PRINCIPAL -->
+    <!-- APLICACIÓN PRINCIPAL -->
     <div id="main-app" class="hidden flex flex-col min-h-screen">
         <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 px-4 py-3 safe-top">
             <div class="container mx-auto flex justify-between items-center">
@@ -98,7 +105,7 @@
                             <button onclick="closeMesaModal()" class="bg-slate-100 p-3 rounded-full text-slate-400 btn-active">✕</button>
                         </div>
                         
-                        <div class="flex-grow scroll-container no-scrollbar space-y-6">
+                        <div class="flex-grow overflow-y-auto no-scrollbar space-y-6 pb-6">
                             <div>
                                 <label class="block font-black mb-3 text-[10px] text-slate-500 uppercase tracking-widest">Añadir al Pedido</label>
                                 <div id="menu-items-mesa" class="grid grid-cols-1 gap-2"></div>
@@ -214,7 +221,6 @@
                         <div id="admin-lista-menu" class="space-y-2"></div>
                     </div>
 
-                    <!-- NUEVA SECCIÓN: Personal (Faltaba en el HTML) -->
                     <div id="admin-tab-empleados" class="admin-sub-tab hidden space-y-6">
                         <div class="bg-white p-6 rounded-[2rem] border shadow-sm">
                             <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Añadir Personal</h4>
@@ -281,7 +287,7 @@
             const pass = document.getElementById('login-pass').value;
             if(!id || !pass) return showToast("Ingresa tus credenciales");
 
-            const { data } = await _supabase.from('empleados').select('*').eq('numero_empleado', id).eq('password', pass).single();
+            const { data, error } = await _supabase.from('empleados').select('*').eq('numero_empleado', id).eq('password', pass).single();
             if (data) { currentUser = data.nombre; initApp(); } 
             else showToast("Usuario o PIN incorrecto");
         }
@@ -314,11 +320,6 @@
                 updateCocinaUI();
                 if(currentMesaId) renderPedidoMesa();
                 
-                const activeAdminTab = document.querySelector('.admin-sub-tab:not(.hidden)');
-                if(activeAdminTab) {
-                    const tabId = activeAdminTab.id.replace('admin-tab-', '');
-                    setAdminTab(tabId);
-                }
             } catch (e) { console.error("Error refresh:", e); }
         }
 
@@ -382,11 +383,12 @@
         }
 
         function renderMenuUI(target) {
-            const id = target === 'mesa' ? 'menu-items-mesa' : 'menu-items-dom';
-            const targetEl = document.getElementById(id);
+            const containerId = target === 'mesa' ? 'menu-items-mesa' : 'menu-items-dom';
+            const targetEl = document.getElementById(containerId);
             if(!targetEl) return;
+            
             targetEl.innerHTML = menu.map(m => `
-                <button onclick="openCustomModal(${m.id}, '${target}')" class="flex justify-between items-center p-4 border-2 border-slate-50 rounded-2xl font-black text-xs bg-white text-left btn-active shadow-sm">
+                <button type="button" onclick="openCustomModal(${m.id}, '${target}')" class="flex justify-between items-center p-4 border-2 border-slate-50 rounded-2xl font-black text-xs bg-white text-left btn-active shadow-sm w-full">
                     <span class="tracking-tighter">${m.nombre}</span> 
                     <span class="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">$${m.precio}</span>
                 </button>`).join('');
@@ -398,7 +400,7 @@
             selectedV1 = null;
             document.getElementById('custom-item-name').innerText = pendingItem.nombre;
             document.getElementById('v1-list').innerHTML = (pendingItem.v1 || []).map(v => `
-                <button onclick="selectV1(this, '${v}')" class="px-5 py-3 bg-slate-100 rounded-xl text-[11px] font-black uppercase transition-all">${v}</button>
+                <button type="button" onclick="selectV1(this, '${v}')" class="px-5 py-3 bg-slate-100 rounded-xl text-[11px] font-black uppercase transition-all touch-manipulation">${v}</button>
             `).join('');
             document.getElementById('custom-nota').value = '';
             document.getElementById('modal-custom').classList.remove('hidden');
@@ -410,23 +412,42 @@
             selectedV1 = val; 
         }
 
-        document.getElementById('btn-confirm-custom').onclick = async () => {
+        // Lógica de confirmación optimizada
+        document.getElementById('btn-confirm-custom').onclick = async function() {
+            if(!pendingItem) return;
+            
             const item = { 
                 nombre: pendingItem.nombre, 
-                precio: pendingItem.precio, 
+                precio: parseFloat(pendingItem.precio), 
                 v1: selectedV1 || 'Estándar', 
-                nota: document.getElementById('custom-nota').value 
+                nota: document.getElementById('custom-nota').value.trim()
             };
 
-            if(currentTarget === 'mesa') {
-                const mesa = mesas.find(m => m.id == currentMesaId);
-                const nTemporal = [...(mesa.pedidotemporal || []), item];
-                await _supabase.from('mesas').update({ total: (mesa.total || 0) + item.precio, pedidotemporal: nTemporal }).eq('id', mesa.id);
-            } else {
-                domPedido.push(item);
-                renderPedidoDom();
+            try {
+                if(currentTarget === 'mesa') {
+                    const mesaIdx = mesas.findIndex(m => m.id == currentMesaId);
+                    if(mesaIdx === -1) return;
+                    
+                    const mesa = mesas[mesaIdx];
+                    const nTemporal = Array.isArray(mesa.pedidotemporal) ? [...mesa.pedidotemporal, item] : [item];
+                    const nuevoTotal = parseFloat(mesa.total || 0) + item.precio;
+
+                    const { error } = await _supabase.from('mesas')
+                        .update({ total: nuevoTotal, pedidotemporal: nTemporal })
+                        .eq('id', currentMesaId);
+                    
+                    if(error) throw error;
+                    showToast("Agregado a mesa");
+                } else {
+                    domPedido.push(item);
+                    renderPedidoDom();
+                    showToast("Agregado a domicilio");
+                }
+                closeCustomModal();
+            } catch (err) {
+                console.error("Error al agregar:", err);
+                showToast("Error al guardar producto");
             }
-            closeCustomModal();
         };
 
         function closeCustomModal() { document.getElementById('modal-custom').classList.add('hidden'); }
@@ -462,8 +483,9 @@
         }
 
         function updateCocinaUI() {
-            document.getElementById('cocina-badge').innerText = comandasCocina.length;
-            document.getElementById('cocina-badge').classList.toggle('hidden', !comandasCocina.length);
+            const badge = document.getElementById('cocina-badge');
+            badge.innerText = comandasCocina.length;
+            badge.classList.toggle('hidden', !comandasCocina.length);
             document.getElementById('lista-cocina').innerHTML = comandasCocina.map(c => `
                 <div class="bg-white rounded-[2rem] border-t-8 border-indigo-700 p-6 shadow-md scale-up">
                     <div class="flex justify-between items-start mb-4">
@@ -485,14 +507,19 @@
 
         async function enviarCocinaMesa() {
             const mesa = mesas.find(m => m.id == currentMesaId);
-            if(!mesa.pedidotemporal?.length) return;
-            await _supabase.from('comandas').insert({ origen: `Mesa ${mesa.id}`, items: mesa.pedidotemporal });
-            await _supabase.from('mesas').update({ 
-                ocupada: true, 
-                pedido: [...(mesa.pedido || []), ...mesa.pedidotemporal], 
-                pedidotemporal: [] 
-            }).eq('id', mesa.id);
-            showToast("Enviado a cocina");
+            if(!mesa || !mesa.pedidotemporal?.length) return;
+            
+            try {
+                await _supabase.from('comandas').insert({ origen: `Mesa ${mesa.id}`, items: mesa.pedidotemporal });
+                await _supabase.from('mesas').update({ 
+                    ocupada: true, 
+                    pedido: [...(mesa.pedido || []), ...mesa.pedidotemporal], 
+                    pedidotemporal: [] 
+                }).eq('id', mesa.id);
+                showToast("Enviado a cocina");
+            } catch (e) {
+                showToast("Error al enviar pedido");
+            }
         }
 
         function mostrarInterfazPago() {
@@ -523,10 +550,8 @@
         }
 
         function setAdminTab(name) {
-            // Guardrail para evitar errores si el elemento no existe
             const targetSection = document.getElementById(`admin-tab-${name}`);
             const targetBtn = document.getElementById(`btn-tab-${name}`);
-            
             if (!targetSection) return;
 
             document.querySelectorAll('.admin-sub-tab').forEach(t => t.classList.add('hidden'));
@@ -570,7 +595,8 @@
         async function saveMenuItem() {
             const nombre = document.getElementById('new-item-nombre').value;
             const precio = document.getElementById('new-item-precio').value;
-            const v1 = document.getElementById('new-item-v1').value.split(',').map(v => v.trim()).filter(v => v);
+            const v1Input = document.getElementById('new-item-v1').value;
+            const v1 = v1Input ? v1Input.split(',').map(v => v.trim()).filter(v => v) : [];
             if(!nombre || !precio) return showToast("Faltan datos");
             await _supabase.from('menu').insert({ nombre, precio: parseFloat(precio), v1 });
             refreshData();
@@ -619,8 +645,9 @@
 
         function showToast(m) {
             const t = document.getElementById('toast'); 
-            t.innerText = m; t.classList.remove('translate-y-32');
-            setTimeout(() => t.classList.add('translate-y-32'), 3000);
+            t.innerText = m; 
+            t.classList.remove('translate-y-32');
+            setTimeout(() => t.classList.add('translate-y-32'), 2500);
         }
 
         function logout() { location.reload(); }
