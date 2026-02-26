@@ -19,11 +19,14 @@
         body { 
             font-family: 'Poppins', sans-serif; 
             background-color: #f8fafc;
+            /* Mejora la respuesta táctil eliminando el retraso de clic */
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
             touch-action: manipulation;
             padding-top: var(--safe-top);
             padding-bottom: var(--safe-bottom);
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
         }
 
         .tab-content { display: none; }
@@ -41,13 +44,20 @@
             border-color: var(--primary-dark) !important; 
         }
 
+        /* Previene el zoom automático en iOS al enfocar inputs manteniendo el diseño */
         input, textarea, select { 
             font-size: 16px !important; 
             appearance: none;
+            outline: none;
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
+        /* Scroll con inercia para dispositivos móviles */
+        .overflow-y-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+
         .btn-active:active { 
             transform: scale(0.95); 
             opacity: 0.8; 
@@ -67,21 +77,21 @@
 </head>
 <body class="text-slate-800 antialiased overflow-x-hidden">
 
-    <!-- PANTALLA DE INICIO DE SESIÓN -->
+    <!-- LOGIN SCREEN -->
     <section id="login-screen" class="fixed inset-0 bg-indigo-900 flex items-center justify-center z-[100] p-6">
         <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm scale-up text-center">
             <h1 class="text-4xl font-black text-indigo-700 italic tracking-tighter mb-1">Gramsoft</h1>
             <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase mb-8">Las Salmantinas</p>
             <div class="space-y-4">
-                <input type="text" id="login-id" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-500 transition-all" placeholder="No. Empleado" inputmode="numeric">
-                <input type="password" id="login-pass" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-500 transition-all" placeholder="Contraseña">
+                <input type="text" id="login-id" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" placeholder="No. Empleado" inputmode="numeric">
+                <input type="password" id="login-pass" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" placeholder="Contraseña">
                 <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold btn-active shadow-lg shadow-indigo-200">Entrar</button>
                 <button onclick="accessAdminDirect()" class="text-slate-400 text-[11px] font-bold uppercase hover:text-indigo-500 pt-2">Acceso Rápido (Pruebas)</button>
             </div>
         </div>
     </section>
 
-    <!-- APLICACIÓN PRINCIPAL -->
+    <!-- MAIN APP -->
     <div id="main-app" class="hidden flex flex-col min-h-screen">
         <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 px-4 py-3">
             <div class="container mx-auto flex justify-between items-center">
@@ -104,7 +114,7 @@
         </header>
 
         <main class="container mx-auto p-4 flex-grow pb-24">
-            <!-- SECCIÓN MESAS -->
+            <!-- TAB MESAS -->
             <section id="mesas" class="tab-content active">
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-3xl font-black text-slate-800 tracking-tighter">Mesas</h2>
@@ -112,7 +122,7 @@
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="grid-mesas"></div>
 
-                <!-- MODAL MESA (Mejorado para Celular) -->
+                <!-- MODAL MESA -->
                 <div id="modal-mesa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
                     <div class="bg-white modal-content-mobile rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl scale-up">
                         <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden"></div>
@@ -144,7 +154,7 @@
                 </div>
             </section>
 
-            <!-- SECCIÓN DOMICILIO -->
+            <!-- TAB DOMICILIO -->
             <section id="domicilio" class="tab-content">
                 <div class="mb-6">
                     <h2 class="text-3xl font-black tracking-tighter">Domicilio</h2>
@@ -152,9 +162,9 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-4">
                         <h4 class="font-black uppercase text-[10px] text-slate-400">Datos del Cliente</h4>
-                        <input type="text" id="dom-nombre" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm focus:border-indigo-500 transition-all outline-none" placeholder="Nombre completo">
-                        <input type="text" id="dom-direccion" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm focus:border-indigo-500 transition-all outline-none" placeholder="Dirección de entrega">
-                        <input type="tel" id="dom-telefono" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm focus:border-indigo-500 transition-all outline-none" placeholder="Teléfono" inputmode="tel">
+                        <input type="text" id="dom-nombre" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm" placeholder="Nombre completo">
+                        <input type="text" id="dom-direccion" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm" placeholder="Dirección de entrega">
+                        <input type="tel" id="dom-telefono" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm" placeholder="Teléfono" inputmode="tel">
                         
                         <h4 class="font-black uppercase text-[10px] text-slate-400 pt-2">Seleccionar Productos</h4>
                         <div id="menu-items-dom" class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1"></div>
@@ -172,7 +182,7 @@
                 </div>
             </section>
 
-            <!-- SECCIÓN COCINA -->
+            <!-- TAB COCINA -->
             <section id="cocina" class="tab-content">
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-black tracking-tighter">Cocina</h2>
@@ -181,7 +191,7 @@
                 <div id="lista-cocina" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
 
-            <!-- SECCIÓN ADMIN -->
+            <!-- TAB ADMIN -->
             <section id="admin" class="tab-content">
                 <div class="mb-8 text-center sm:text-left">
                     <h2 class="text-3xl font-black tracking-tighter">Administración</h2>
@@ -189,7 +199,7 @@
                 
                 <div id="admin-login-box" class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 max-w-sm mx-auto text-center scale-up">
                     <p class="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">PIN de Seguridad</p>
-                    <input type="password" id="admin-pin" class="w-full p-5 bg-slate-50 border-2 rounded-2xl mb-6 text-center text-3xl tracking-[1em] outline-none focus:border-indigo-500" placeholder="••••" inputmode="numeric" maxlength="4">
+                    <input type="password" id="admin-pin" class="w-full p-5 bg-slate-50 border-2 rounded-2xl mb-6 text-center text-3xl tracking-[1em]" placeholder="••••" inputmode="numeric" maxlength="4">
                     <button onclick="checkAdminAccess()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black btn-active">Acceder al Panel</button>
                 </div>
                 
@@ -225,7 +235,7 @@
                     <div id="admin-tab-menu" class="admin-sub-tab hidden space-y-6">
                         <div class="bg-white p-6 rounded-[2rem] border">
                             <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Nuevo Platillo</h4>
-                            <input type="text" id="new-item-nombre" class="w-full p-4 bg-slate-50 border rounded-xl mb-3 outline-none focus:border-indigo-500" placeholder="Nombre del platillo">
+                            <input type="text" id="new-item-nombre" class="w-full p-4 bg-slate-50 border rounded-xl mb-3" placeholder="Nombre del platillo">
                             <div class="grid grid-cols-2 gap-3 mb-3">
                                 <input type="number" id="new-item-precio" class="p-4 bg-slate-50 border rounded-xl" placeholder="Precio" inputmode="decimal">
                                 <input type="text" id="new-item-v1" class="p-4 bg-slate-50 border rounded-xl" placeholder="Variantes (ej. G, C)">
@@ -264,7 +274,7 @@
         </main>
     </div>
 
-    <!-- MODAL CUSTOMIZACIÓN -->
+    <!-- CUSTOMIZATION MODAL -->
     <div id="modal-custom" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-2xl scale-up text-center">
             <div id="custom-item-name" class="text-2xl font-black mb-2 text-indigo-900 italic"></div>
@@ -272,7 +282,7 @@
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Selecciona Variante</p>
                 <div id="v1-list" class="flex flex-wrap justify-center gap-2"></div>
             </div>
-            <textarea id="custom-nota" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-6 text-sm outline-none focus:border-indigo-500" rows="2" placeholder="Nota especial..."></textarea>
+            <textarea id="custom-nota" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-6 text-sm" rows="2" placeholder="Nota especial..."></textarea>
             <div class="space-y-2">
                 <button id="btn-confirm-custom" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black btn-active">Agregar</button>
                 <button onclick="closeCustomModal()" class="w-full text-slate-400 font-bold text-[10px] uppercase py-2">Cancelar</button>
@@ -280,7 +290,7 @@
         </div>
     </div>
 
-    <!-- MODAL PAGO -->
+    <!-- PAYMENT MODAL -->
     <div id="modal-pago" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-[100]">
         <div class="bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-2xl scale-up">
             <h3 class="text-xl font-black mb-6 text-center uppercase">Cobrar Cuenta</h3>
@@ -301,6 +311,7 @@
         let menu = [], mesas = [], comandasCocina = [], empleados = [], domPedido = [], ventas = [];
         let currentMesaId = null, currentTarget = '', pendingItem = null, selectedV1 = null;
         let currentUser = "Empleado";
+        let isRefreshing = false;
 
         window.onload = async () => {
             try {
@@ -335,6 +346,8 @@
         }
 
         async function refreshData() {
+            if(isRefreshing) return;
+            isRefreshing = true;
             try {
                 const [mResp, msResp, cResp, eResp, vResp] = await Promise.all([
                     _supabase.from('menu').select('*').order('nombre'),
@@ -353,11 +366,13 @@
                 if(currentMesaId) renderPedidoMesa();
                 renderResumenDom();
             } catch (e) { console.error(e); }
+            finally { isRefreshing = false; }
         }
 
         function setupRealtime() {
             _supabase.channel('restaurante').on('postgres_changes', { event: '*', schema: 'public' }, () => {
-                setTimeout(refreshData, 300);
+                clearTimeout(window.refreshTimer);
+                window.refreshTimer = setTimeout(refreshData, 500);
             }).subscribe();
         }
 
@@ -399,7 +414,6 @@
             document.getElementById('btn-cocina-mesa').classList.toggle('hidden', !mesa.pedidotemporal?.length);
         }
 
-        // FIX: Se agregó soporte para eventos táctiles específicos en celulares
         function renderMenuUI(target) {
             const containerId = target === 'mesa' ? 'menu-items-mesa' : 'menu-items-dom';
             const targetEl = document.getElementById(containerId);
@@ -407,12 +421,10 @@
             
             targetEl.innerHTML = menu.map(m => `
                 <button type="button" 
-                        onmousedown="this.style.opacity='0.6'" 
-                        onmouseup="this.style.opacity='1'" 
                         onclick="openCustomModal(${m.id}, '${target}')" 
                         class="flex justify-between items-center p-5 border-2 border-slate-50 rounded-2xl font-black text-sm bg-white text-left btn-active shadow-sm w-full mb-2">
-                    <span class="pointer-events-none">${m.nombre}</span> 
-                    <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl pointer-events-none">$${m.precio.toFixed(2)}</span>
+                    <span>${m.nombre}</span> 
+                    <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">$${m.precio.toFixed(2)}</span>
                 </button>`).join('');
         }
 
@@ -438,31 +450,15 @@
 
         document.getElementById('btn-confirm-custom').onclick = async function() {
             if(!pendingItem) return;
-            
-            const item = { 
-                nombre: pendingItem.nombre, 
-                precio: pendingItem.precio, 
-                v1: selectedV1 || 'Estándar', 
-                nota: document.getElementById('custom-nota').value 
-            };
-
+            const item = { nombre: pendingItem.nombre, precio: pendingItem.precio, v1: selectedV1 || 'Estándar', nota: document.getElementById('custom-nota').value };
             if(currentTarget === 'mesa') {
                 const m = mesas.find(m => m.id == currentMesaId);
                 const nT = [...(m.pedidotemporal || []), item];
-                const { error } = await _supabase.from('mesas')
-                    .update({ 
-                        total: (m.total || 0) + item.precio, 
-                        pedidotemporal: nT, 
-                        ocupada: true 
-                    })
-                    .eq('id', currentMesaId);
-                
-                if(error) showToast("Error al guardar");
+                await _supabase.from('mesas').update({ total: (m.total || 0) + item.precio, pedidotemporal: nT, ocupada: true }).eq('id', currentMesaId);
             } else {
                 domPedido.push(item);
                 renderResumenDom();
             }
-            
             closeCustomModal(); 
             await refreshData();
         };
@@ -490,11 +486,9 @@
             const nombre = document.getElementById('dom-nombre').value;
             const direccion = document.getElementById('dom-direccion').value;
             if(!nombre || !direccion || !domPedido.length) return showToast("Datos incompletos");
-            
             const total = domPedido.reduce((a, v) => a + v.precio, 0);
             await _supabase.from('comandas').insert({ origen: `Domicilio: ${nombre}`, items: domPedido, status: 'pendiente' });
             await _supabase.from('ventas').insert({ origen: `Domicilio: ${nombre}`, total, metodo: 'Pendiente', detalles: domPedido });
-            
             domPedido = [];
             document.getElementById('dom-nombre').value = '';
             document.getElementById('dom-direccion').value = '';
@@ -527,7 +521,6 @@
             if(pin === '1234' || currentUser === 'Admin') {
                 document.getElementById('admin-login-box').classList.add('hidden');
                 document.getElementById('admin-panel').classList.remove('hidden');
-                showToast("Acceso Concedido");
             } else {
                 showToast("PIN Incorrecto");
                 document.getElementById('admin-pin').value = '';
@@ -565,6 +558,7 @@
         function showTab(id) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
         }
         function showToast(m) {
             const t = document.getElementById('toast'); 
@@ -591,7 +585,7 @@
             document.getElementById('admin-lista-mesas').innerHTML = mesas.map(m => `
                 <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
                     <span class="font-black text-xs uppercase text-left">Mesa #${m.id}</span>
-                    <button onclick="deleteMesa(${m.id})" class="text-red-500 font-bold text-[10px] uppercase p-2 hover:bg-red-50 rounded-xl">Eliminar</button>
+                    <button onclick="deleteMesa(${m.id})" class="text-red-500 font-bold text-[10px] uppercase p-2">Eliminar</button>
                 </div>
             `).join('');
         }
