@@ -2,645 +2,796 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gramsoft by Las Salmantinas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaborPOS - Sistema de Gestión</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-        
-        :root { 
-            --primary: #4f46e5; 
-            --primary-dark: #4338ca; 
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
-        }
-        
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            background-color: #f8fafc;
-            /* Mejora la respuesta táctil eliminando el retraso de clic */
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
-            touch-action: manipulation;
-            padding-top: var(--safe-top);
-            padding-bottom: var(--safe-bottom);
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; overflow-x: hidden; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        .scale-up { animation: scaleUp 0.15s ease-out; }
-        @keyframes scaleUp {
-            from { transform: scale(0.96); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .variant-selected { 
-            background-color: var(--primary) !important; 
-            color: white !important; 
-            border-color: var(--primary-dark) !important; 
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ea580c; border-radius: 10px; }
 
-        /* Previene el zoom automático en iOS al enfocar inputs manteniendo el diseño */
-        input, textarea, select { 
-            font-size: 16px !important; 
-            appearance: none;
-            outline: none;
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Scroll con inercia para dispositivos móviles */
-        .overflow-y-auto {
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .btn-active:active { 
-            transform: scale(0.95); 
-            opacity: 0.8; 
-            transition: transform 0.1s ease;
-        }
-        
-        @media (max-width: 640px) {
-            .modal-content-mobile {
-                border-radius: 2.5rem 2.5rem 0 0 !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                margin-bottom: 0 !important;
-                padding-bottom: calc(2rem + var(--safe-bottom)) !important;
-            }
-        }
+        /* Estilos para botones de variantes activos */
+        .variant-btn.active { border-color: #ea580c; background-color: #fff7ed; color: #ea580c; }
     </style>
 </head>
-<body class="text-slate-800 antialiased overflow-x-hidden">
+<body class="min-h-screen">
 
-    <!-- LOGIN SCREEN -->
-    <section id="login-screen" class="fixed inset-0 bg-indigo-900 flex items-center justify-center z-[100] p-6">
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm scale-up text-center">
-            <h1 class="text-4xl font-black text-indigo-700 italic tracking-tighter mb-1">Gramsoft</h1>
-            <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase mb-8">Las Salmantinas</p>
+    <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-orange-600">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-sm m-4 fade-in">
+            <div class="text-center mb-8">
+                <div class="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="utensils" class="text-orange-600 w-8 h-8"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800">SaborPOS</h1>
+                <p class="text-gray-500">Gestión de Restaurante</p>
+            </div>
             <div class="space-y-4">
-                <input type="text" id="login-id" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" placeholder="No. Empleado" inputmode="numeric">
-                <input type="password" id="login-pass" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl" placeholder="Contraseña">
-                <button onclick="handleLogin()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold btn-active shadow-lg shadow-indigo-200">Entrar</button>
-                <button onclick="accessAdminDirect()" class="text-slate-400 text-[11px] font-bold uppercase hover:text-indigo-500 pt-2">Acceso Rápido (Pruebas)</button>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">ID Empleado</label>
+                    <input type="text" id="emp-id" placeholder="ID (ej: 101)" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase ml-1">Contraseña</label>
+                    <input type="password" id="emp-pass" placeholder="****" class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-orange-500 outline-none transition-all">
+                </div>
+                <button onclick="attemptLogin()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold hover:bg-orange-700 active:scale-95 transition-all shadow-lg shadow-orange-200">
+                    Entrar al Sistema
+                </button>
             </div>
+            <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden font-medium">Credenciales incorrectas</p>
         </div>
-    </section>
+    </div>
 
-    <!-- MAIN APP -->
-    <div id="main-app" class="hidden flex flex-col min-h-screen">
-        <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-50 px-4 py-3">
-            <div class="container mx-auto flex justify-between items-center">
-                <div class="flex flex-col">
-                    <h1 class="text-xl font-black italic tracking-tighter">Gramsoft</h1>
-                    <span id="user-display" class="text-[9px] text-indigo-200 font-bold uppercase truncate max-w-[80px]">...</span>
+    <div id="main-app" class="hidden pb-24 lg:pb-0 lg:pl-64">
+        
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t lg:border-t-0 lg:border-r lg:w-64 lg:top-0 lg:h-full z-40 flex lg:flex-col justify-around lg:justify-start lg:p-4 shadow-2xl lg:shadow-none">
+            <div class="hidden lg:flex items-center mb-10 px-4 pt-4">
+                <div class="bg-orange-600 p-2 rounded-lg mr-3">
+                    <i data-lucide="chef-hat" class="text-white w-6 h-6"></i>
                 </div>
-                <nav class="flex items-center gap-1 overflow-x-auto no-scrollbar ml-2">
-                    <button onclick="showTab('mesas')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Mesas</button>
-                    <button onclick="showTab('domicilio')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Dom</button>
-                    <button onclick="showTab('cocina')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition relative text-[10px] font-bold uppercase whitespace-nowrap">
-                        Cocina <span id="cocina-badge" class="absolute -top-1 -right-1 bg-red-500 text-[9px] rounded-full h-4 w-4 flex items-center justify-center hidden border-2 border-indigo-700 font-black">0</span>
-                    </button>
-                    <button onclick="showTab('admin')" class="px-3 py-2 rounded-xl hover:bg-indigo-600 transition text-[10px] font-bold uppercase whitespace-nowrap">Admin</button>
-                    <button onclick="logout()" class="ml-1 p-2 bg-indigo-800 rounded-xl btn-active flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg>
-                    </button>
-                </nav>
+                <h2 class="text-xl font-bold text-gray-800">SaborPOS</h2>
             </div>
-        </header>
+            
+            <button onclick="showTab('mesas')" class="nav-btn flex flex-col lg:flex-row items-center p-3 lg:px-4 lg:py-3 lg:mb-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-2xl transition-all w-full active-tab" id="btn-mesas">
+                <i data-lucide="layout-grid" class="w-6 h-6 lg:mr-3"></i>
+                <span class="text-[10px] lg:text-base font-bold uppercase lg:capitalize">Mesas</span>
+            </button>
+            
+            <button onclick="showTab('domicilio')" class="nav-btn flex flex-col lg:flex-row items-center p-3 lg:px-4 lg:py-3 lg:mb-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-2xl transition-all w-full" id="btn-domicilio">
+                <i data-lucide="truck" class="w-6 h-6 lg:mr-3"></i>
+                <span class="text-[10px] lg:text-base font-bold uppercase lg:capitalize">Envios</span>
+            </button>
+            
+            <button onclick="showTab('cocina')" class="nav-btn flex flex-col lg:flex-row items-center p-3 lg:px-4 lg:py-3 lg:mb-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-2xl transition-all w-full" id="btn-cocina">
+                <i data-lucide="utensils-crosses" class="w-6 h-6 lg:mr-3"></i>
+                <span class="text-[10px] lg:text-base font-bold uppercase lg:capitalize">Cocina</span>
+            </button>
+            
+            <button onclick="checkAdminAccess()" class="nav-btn flex flex-col lg:flex-row items-center p-3 lg:px-4 lg:py-3 lg:mb-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-2xl transition-all w-full" id="btn-admin">
+                <i data-lucide="shield-check" class="w-6 h-6 lg:mr-3"></i>
+                <span class="text-[10px] lg:text-base font-bold uppercase lg:capitalize">Admin</span>
+            </button>
+            
+            <button onclick="logout()" class="flex flex-col lg:flex-row items-center p-3 lg:px-4 lg:py-3 lg:mt-auto text-red-500 hover:bg-red-50 rounded-2xl transition-all w-full">
+                <i data-lucide="log-out" class="w-6 h-6 lg:mr-3"></i>
+                <span class="text-[10px] lg:text-base font-bold uppercase lg:capitalize">Salir</span>
+            </button>
+        </nav>
 
-        <main class="container mx-auto p-4 flex-grow pb-24">
-            <!-- TAB MESAS -->
-            <section id="mesas" class="tab-content active">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-black text-slate-800 tracking-tighter">Mesas</h2>
-                    <div class="text-[10px] font-black text-slate-400 uppercase bg-slate-100 px-3 py-1.5 rounded-full" id="mesa-count">0 mesas</div>
-                </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4" id="grid-mesas"></div>
-
-                <!-- MODAL MESA -->
-                <div id="modal-mesa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 z-[60]">
-                    <div class="bg-white modal-content-mobile rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 w-full max-w-md max-h-[92vh] flex flex-col shadow-2xl scale-up">
-                        <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4 sm:hidden"></div>
-                        <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                            <h3 id="modal-mesa-titulo" class="text-2xl font-black text-indigo-900 italic">Mesa #</h3>
-                            <button onclick="closeMesaModal()" class="bg-slate-100 p-3 rounded-full text-slate-400 btn-active">✕</button>
+        <main class="p-4 lg:p-8 max-w-7xl mx-auto">
+            
+            <div id="tab-mesas" class="tab-content active fade-in">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800">Salón Principal</h2>
+                        <p class="text-gray-500">Selecciona una mesa para gestionar el pedido</p>
+                    </div>
+                    <div class="flex items-center bg-white p-2 rounded-2xl shadow-sm border">
+                        <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mr-3">
+                            <i data-lucide="user" class="text-orange-600 w-5 h-5"></i>
                         </div>
-                        
-                        <div class="flex-grow overflow-y-auto no-scrollbar space-y-6 pb-6">
-                            <div>
-                                <label class="block font-black mb-3 text-[10px] text-slate-500 uppercase tracking-widest">Añadir al Pedido</label>
-                                <div id="menu-items-mesa" class="grid grid-cols-1 gap-2"></div>
-                            </div>
-                            
-                            <div class="bg-slate-50 rounded-[2rem] p-5 border-2 border-slate-100">
-                                <h4 class="text-[10px] font-black uppercase text-slate-400 mb-3">Detalle de Cuenta</h4>
-                                <ul id="lista-pedido-mesa" class="mb-4 text-sm space-y-2"></ul>
-                                <div class="flex justify-between items-center font-black text-2xl p-4 bg-white rounded-2xl shadow-sm mb-4">
-                                    <span class="text-sm text-slate-400 uppercase">Total</span>
-                                    <span id="total-mesa">$0.00</span>
+                        <div>
+                            <p class="text-xs text-gray-400 font-bold uppercase">Mesero Activo</p>
+                            <p id="current-waiter-name" class="font-bold text-gray-800 leading-none">---</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="grid-mesas" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"></div>
+            </div>
+
+            <div id="tab-domicilio" class="tab-content fade-in">
+                <h2 class="text-3xl font-black text-gray-800 mb-8">Pedidos Externos</h2>
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1">
+                        <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-100 sticky top-8">
+                            <h3 class="text-xl font-bold mb-6 flex items-center text-orange-600">
+                                <i data-lucide="plus-circle" class="mr-2"></i> Nuevo Registro
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-400 uppercase">Tipo de Pedido</label>
+                                    <select id="ext-type" onchange="toggleExtFields()" class="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-orange-500">
+                                        <option value="domicilio">A Domicilio</option>
+                                        <option value="pickup">Pasar a Recoger (Pickup)</option>
+                                    </select>
                                 </div>
-                                <div class="grid grid-cols-1 gap-2">
-                                    <button id="btn-cocina-mesa" onclick="enviarCocinaMesa()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg btn-active">Enviar a Cocina</button>
-                                    <button id="btn-pre-pago" onclick="mostrarInterfazPago()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black hidden btn-active">Cobrar Cuenta</button>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-400 uppercase">Nombre del Cliente</label>
+                                    <input type="text" id="ext-name" placeholder="Ej: Juan Pérez" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
                                 </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-400 uppercase">Celular</label>
+                                    <input type="tel" id="ext-phone" placeholder="10 dígitos" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
+                                </div>
+                                <div id="field-address">
+                                    <label class="text-xs font-bold text-gray-400 uppercase">Dirección de Entrega</label>
+                                    <textarea id="ext-address" rows="2" placeholder="Calle, Número, Colonia..." class="w-full p-3 bg-gray-50 border rounded-xl outline-none"></textarea>
+                                </div>
+                                <div id="field-time" class="hidden">
+                                    <label class="text-xs font-bold text-gray-400 uppercase">Hora de Entrega</label>
+                                    <input type="time" id="ext-time" class="w-full p-3 bg-gray-50 border rounded-xl outline-none">
+                                </div>
+                                <button onclick="openExternalOrder()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+                                    Continuar Pedido
+                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            <!-- TAB DOMICILIO -->
-            <section id="domicilio" class="tab-content">
-                <div class="mb-6">
-                    <h2 class="text-3xl font-black tracking-tighter">Domicilio</h2>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-4">
-                        <h4 class="font-black uppercase text-[10px] text-slate-400">Datos del Cliente</h4>
-                        <input type="text" id="dom-nombre" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm" placeholder="Nombre completo">
-                        <input type="text" id="dom-direccion" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm" placeholder="Dirección de entrega">
-                        <input type="tel" id="dom-telefono" class="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl text-sm" placeholder="Teléfono" inputmode="tel">
-                        
-                        <h4 class="font-black uppercase text-[10px] text-slate-400 pt-2">Seleccionar Productos</h4>
-                        <div id="menu-items-dom" class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1"></div>
-                    </div>
-                    
-                    <div class="bg-indigo-50 p-6 rounded-[2.5rem] border-2 border-indigo-100 flex flex-col h-fit">
-                        <h4 class="font-black mb-4 uppercase text-[10px] text-indigo-400">Resumen de Orden</h4>
-                        <ul id="lista-pedido-dom" class="space-y-2 mb-6 text-sm"></ul>
-                        <div class="flex justify-between items-center font-black text-2xl mb-6 border-t border-indigo-200 pt-4">
-                            <span class="text-sm uppercase">Total</span>
-                            <span id="total-dom">$0.00</span>
-                        </div>
-                        <button onclick="enviarDomicilio()" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black btn-active shadow-xl shadow-indigo-200">Confirmar Pedido</button>
+                    <div class="lg:col-span-2">
+                        <h4 class="font-bold text-gray-400 uppercase text-sm mb-4">Pedidos en curso</h4>
+                        <div id="list-external" class="grid gap-4"></div>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- TAB COCINA -->
-            <section id="cocina" class="tab-content">
+            <div id="tab-cocina" class="tab-content fade-in">
                 <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl font-black tracking-tighter">Cocina</h2>
-                    <button onclick="refreshData()" class="p-3 bg-slate-100 rounded-full text-[10px] font-bold uppercase btn-active">Actualizar</button>
-                </div>
-                <div id="lista-cocina" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </section>
-
-            <!-- TAB ADMIN -->
-            <section id="admin" class="tab-content">
-                <div class="mb-8 text-center sm:text-left">
-                    <h2 class="text-3xl font-black tracking-tighter">Administración</h2>
-                </div>
-                
-                <div id="admin-login-box" class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 max-w-sm mx-auto text-center scale-up">
-                    <p class="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">PIN de Seguridad</p>
-                    <input type="password" id="admin-pin" class="w-full p-5 bg-slate-50 border-2 rounded-2xl mb-6 text-center text-3xl tracking-[1em]" placeholder="••••" inputmode="numeric" maxlength="4">
-                    <button onclick="checkAdminAccess()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black btn-active">Acceder al Panel</button>
-                </div>
-                
-                <div id="admin-panel" class="hidden space-y-8">
-                    <div id="admin-tabs-nav" class="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
-                        <button onclick="setAdminTab('ventas')" id="btn-tab-ventas" class="px-6 py-2.5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Ventas</button>
-                        <button onclick="setAdminTab('menu')" id="btn-tab-menu" class="px-6 py-2.5 bg-slate-200 text-slate-600 rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Menú</button>
-                        <button onclick="setAdminTab('mesas-config')" id="btn-tab-mesas-config" class="px-6 py-2.5 bg-slate-200 text-slate-600 rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Mesas</button>
-                        <button onclick="setAdminTab('personal')" id="btn-tab-personal" class="px-6 py-2.5 bg-slate-200 text-slate-600 rounded-full font-black text-[10px] uppercase whitespace-nowrap btn-active">Personal</button>
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-800">Pantalla de Cocina</h2>
+                        <p class="text-gray-500">Gestión de comandas en tiempo real</p>
                     </div>
-                    
-                    <div id="admin-tab-ventas" class="admin-sub-tab">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                            <div class="bg-emerald-600 text-white p-6 rounded-3xl shadow-lg">
-                                <span class="text-[9px] uppercase font-black opacity-80">Caja Hoy</span>
-                                <div id="admin-ventas-hoy" class="text-3xl font-black">$0.00</div>
+                    <button onclick="refreshKitchen()" class="bg-green-600 text-white px-6 py-3 rounded-2xl flex items-center font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition-all">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 mr-2"></i> Actualizar
+                    </button>
+                </div>
+                <div id="kitchen-orders" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="tab-admin" class="tab-content fade-in">
+                <h2 class="text-3xl font-black text-gray-800 mb-8">Administración del Sistema</h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-400 font-bold text-xs uppercase">Ventas Totales</p>
+                                <h3 id="total-ventas-dia" class="text-3xl font-black text-gray-800 mt-1">$0.00</h3>
                             </div>
-                            <div class="bg-slate-800 text-white p-6 rounded-3xl shadow-lg">
-                                <span class="text-[9px] uppercase font-black opacity-80">Órdenes</span>
-                                <div id="admin-ordenes-count" class="text-3xl font-black">0</div>
+                            <div class="p-3 bg-green-100 rounded-2xl text-green-600">
+                                <i data-lucide="trending-up"></i>
                             </div>
                         </div>
-                        <div class="bg-white rounded-[2rem] shadow-sm border overflow-x-auto no-scrollbar">
-                            <table class="w-full text-left text-xs min-w-[400px]">
-                                <thead class="bg-slate-50 text-[10px] uppercase font-black text-slate-400">
-                                    <tr><th class="p-4">Hora</th><th class="p-4">Origen</th><th class="p-4">Total</th><th class="p-4">Met.</th></tr>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-400 font-bold text-xs uppercase">Mejor Empleado</p>
+                                <h3 id="top-waiter" class="text-2xl font-black text-orange-600 mt-1">---</h3>
+                            </div>
+                            <div class="p-3 bg-orange-100 rounded-2xl text-orange-600">
+                                <i data-lucide="award"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                        <button onclick="generateReport()" class="w-full h-full bg-gray-900 text-white rounded-3xl flex items-center justify-center font-bold py-4 hover:bg-black transition-all shadow-xl shadow-gray-200">
+                            <i data-lucide="download" class="mr-2"></i> Generar Corte (PDF)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-8 mb-8">
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                        <h3 class="font-black text-gray-400 uppercase text-sm mb-6">Gestión de Productos</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <input type="text" id="p-name" placeholder="Nombre (ej: Gorditas)" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                            <input type="number" id="p-price" placeholder="Precio ($)" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                            <input type="text" id="p-varA" placeholder="Variante 1 (ej: Comal/Fritas)" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                            <input type="text" id="p-varB" placeholder="Variante 2 (ej: Guisos)" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                            <button onclick="addProduct()" class="col-span-2 bg-orange-600 text-white py-3 rounded-xl font-bold">Agregar Producto</button>
+                        </div>
+                        <div class="overflow-y-auto max-h-64 border rounded-2xl">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="p-3 font-bold text-gray-500">Nombre</th>
+                                        <th class="p-3 font-bold text-gray-500">Precio</th>
+                                        <th class="p-3 text-right"></th>
+                                    </tr>
                                 </thead>
-                                <tbody id="lista-ventas"></tbody>
+                                <tbody id="table-menu" class="divide-y"></tbody>
                             </table>
                         </div>
                     </div>
 
-                    <div id="admin-tab-menu" class="admin-sub-tab hidden space-y-6">
-                        <div class="bg-white p-6 rounded-[2rem] border">
-                            <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Nuevo Platillo</h4>
-                            <input type="text" id="new-item-nombre" class="w-full p-4 bg-slate-50 border rounded-xl mb-3" placeholder="Nombre del platillo">
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <input type="number" id="new-item-precio" class="p-4 bg-slate-50 border rounded-xl" placeholder="Precio" inputmode="decimal">
-                                <input type="text" id="new-item-v1" class="p-4 bg-slate-50 border rounded-xl" placeholder="Variantes (ej. G, C)">
-                            </div>
-                            <button onclick="saveMenuItem()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl btn-active">Guardar</button>
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                        <h3 class="font-black text-gray-400 uppercase text-sm mb-6">Gestión de Salón (Mesas)</h3>
+                        <div class="flex gap-4 mb-6">
+                            <input type="number" id="m-number" placeholder="Número de Mesa" class="flex-1 p-3 bg-gray-50 border rounded-xl outline-none">
+                            <button onclick="addMesa()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Añadir Mesa</button>
                         </div>
-                        <div id="admin-lista-menu" class="space-y-2"></div>
-                    </div>
-
-                    <div id="admin-tab-mesas-config" class="admin-sub-tab hidden space-y-6">
-                        <div class="bg-white p-6 rounded-[2rem] border text-center">
-                            <button onclick="addMesa()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black btn-active w-full">Añadir Nueva Mesa +</button>
-                        </div>
-                        <div id="admin-lista-mesas" class="grid grid-cols-1 gap-3"></div>
-                    </div>
-
-                    <div id="admin-tab-personal" class="admin-sub-tab hidden space-y-6">
-                        <div class="bg-white p-6 rounded-[2rem] border">
-                            <h4 class="text-[10px] font-black uppercase text-slate-400 mb-4">Nuevo Empleado</h4>
-                            <div class="space-y-3 mb-3">
-                                <input type="text" id="new-emp-nombre" class="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Nombre">
-                                <input type="number" id="new-emp-id" class="w-full p-4 bg-slate-50 border rounded-xl" placeholder="No. Empleado" inputmode="numeric">
-                                <input type="password" id="new-emp-pass" class="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Contraseña">
-                                <select id="new-emp-rol" class="w-full p-4 bg-slate-50 border rounded-xl">
-                                    <option value="mesero">Mesero</option>
-                                    <option value="cocina">Cocina</option>
-                                    <option value="admin">Administrador</option>
-                                </select>
-                            </div>
-                            <button onclick="saveEmpleado()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl btn-active">Registrar Personal</button>
-                        </div>
-                        <div id="admin-lista-personal" class="space-y-2"></div>
+                        <div class="grid grid-cols-4 sm:grid-cols-6 gap-3 max-h-64 overflow-y-auto p-1" id="list-mesas-admin"></div>
                     </div>
                 </div>
-            </section>
+
+                <div class="bg-white p-6 rounded-3xl shadow-sm border">
+                    <h3 class="font-black text-gray-400 uppercase text-sm mb-6">Inicios de Sesión (Meseros)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <input type="text" id="e-id" placeholder="ID Empleado" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                        <input type="text" id="e-name" placeholder="Nombre Completo" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                        <input type="password" id="e-pass" placeholder="Contraseña" class="p-3 bg-gray-50 border rounded-xl outline-none">
+                        <button onclick="addEmpleado()" class="bg-green-600 text-white py-3 rounded-xl font-bold">Crear Acceso</button>
+                    </div>
+                    <div class="overflow-x-auto rounded-2xl border">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 font-bold text-gray-500 uppercase text-xs">ID</th>
+                                    <th class="p-4 font-bold text-gray-500 uppercase text-xs">Nombre</th>
+                                    <th class="p-4 font-bold text-gray-500 uppercase text-xs">Ventas</th>
+                                    <th class="p-4 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-empleados" class="divide-y"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <!-- CUSTOMIZATION MODAL -->
-    <div id="modal-custom" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-[100]">
-        <div class="bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-2xl scale-up text-center">
-            <div id="custom-item-name" class="text-2xl font-black mb-2 text-indigo-900 italic"></div>
-            <div id="v1-container" class="mb-6">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Selecciona Variante</p>
-                <div id="v1-list" class="flex flex-wrap justify-center gap-2"></div>
+    <div id="order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-5xl h-[90vh] rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl fade-in">
+            <div class="p-6 bg-orange-600 text-white flex justify-between items-center">
+                <div>
+                    <h3 id="order-title" class="text-2xl font-black">---</h3>
+                    <p class="text-orange-100 text-sm opacity-80">Seleccione opciones e items</p>
+                </div>
+                <button onclick="closeOrderModal()" class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-all">
+                    <i data-lucide="x"></i>
+                </button>
             </div>
-            <textarea id="custom-nota" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl mb-6 text-sm" rows="2" placeholder="Nota especial..."></textarea>
-            <div class="space-y-2">
-                <button id="btn-confirm-custom" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black btn-active">Agregar</button>
-                <button onclick="closeCustomModal()" class="w-full text-slate-400 font-bold text-[10px] uppercase py-2">Cancelar</button>
+            
+            <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                <div class="flex-1 p-6 overflow-y-auto bg-gray-50" id="menu-container">
+                    <div id="menu-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                </div>
+
+                <div id="product-config" class="hidden flex-1 p-6 flex flex-col bg-white">
+                    <h4 id="config-name" class="text-2xl font-black text-orange-600 mb-6">Configurar Producto</h4>
+                    <div class="space-y-8 flex-1 overflow-y-auto pr-2">
+                        <div id="v1-container">
+                            <label class="text-xs font-black text-gray-400 uppercase mb-3 block">Variante 1</label>
+                            <div id="v1-options" class="grid grid-cols-2 gap-3"></div>
+                        </div>
+                        <div id="v2-container">
+                            <label class="text-xs font-black text-gray-400 uppercase mb-3 block">Variante 2</label>
+                            <div id="v2-options" class="grid grid-cols-1 gap-2"></div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-black text-gray-400 uppercase mb-3 block">Notas Especiales</label>
+                            <textarea id="config-note" class="w-full p-4 bg-gray-50 border rounded-2xl outline-none" rows="2" placeholder="Ej: Sin cebolla..."></textarea>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-8">
+                        <button onclick="cancelProductConfig()" class="bg-gray-100 text-gray-500 py-4 rounded-2xl font-bold">Cancelar</button>
+                        <button onclick="confirmProductAdd()" class="bg-orange-600 text-white py-4 rounded-2xl font-bold">Agregar Item</button>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-96 p-6 flex flex-col bg-white border-l border-gray-100" id="summary-container">
+                    <div id="order-items" class="flex-1 overflow-y-auto space-y-3 mb-6 pr-2"></div>
+                    <div class="bg-gray-50 p-6 rounded-3xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="text-gray-400 font-bold">Total</span>
+                            <span id="order-total" class="text-3xl font-black text-orange-600">$0.00</span>
+                        </div>
+                        <div class="grid gap-3">
+                            <button onclick="sendToKitchen()" class="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-black">
+                                <i data-lucide="flame" class="w-5 h-5 mr-2"></i> Enviar a Cocina
+                            </button>
+                            <button onclick="openPaymentOptions()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-green-700">
+                                <i data-lucide="credit-card" class="w-5 h-5 mr-2"></i> Cobrar Cuenta
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- PAYMENT MODAL -->
-    <div id="modal-pago" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-4 z-[100]">
-        <div class="bg-white rounded-[3rem] p-8 w-full max-w-sm shadow-2xl scale-up">
-            <h3 class="text-xl font-black mb-6 text-center uppercase">Cobrar Cuenta</h3>
-            <div id="pago-total-display" class="text-5xl font-black text-emerald-600 text-center mb-8 bg-slate-50 py-8 rounded-[2.5rem] tracking-tighter">$0.00</div>
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="procesarPago('Efectivo')" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black btn-active">Efectivo</button>
-                <button onclick="procesarPago('Tarjeta')" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black btn-active">Tarjeta</button>
+    <div id="payment-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full text-center fade-in">
+            <h3 class="text-2xl font-black mb-8">Método de Pago</h3>
+            <div class="grid gap-4">
+                <button onclick="finalizeSale('Efectivo')" class="bg-gray-100 p-6 rounded-3xl font-black hover:bg-green-50 hover:text-green-600 transition-all border-2 border-transparent hover:border-green-200 group">
+                    <i data-lucide="banknote" class="w-8 h-8 mx-auto mb-2 text-gray-400 group-hover:text-green-600"></i>
+                    EFECTIVO
+                </button>
+                <button onclick="finalizeSale('Tarjeta')" class="bg-gray-100 p-6 rounded-3xl font-black hover:bg-blue-50 hover:text-blue-600 transition-all border-2 border-transparent hover:border-blue-200 group">
+                    <i data-lucide="credit-card" class="w-8 h-8 mx-auto mb-2 text-gray-400 group-hover:text-blue-600"></i>
+                    TARJETA
+                </button>
             </div>
-            <button onclick="closePagoModal()" class="w-full mt-4 text-slate-400 font-bold text-[10px] uppercase text-center py-2">Regresar</button>
+            <button onclick="closePaymentModal()" class="mt-8 text-gray-400 font-bold uppercase text-xs tracking-widest">Cancelar</button>
         </div>
     </div>
-
-    <!-- TOAST NOTIFICATIONS -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl translate-y-32 transition-transform duration-300 z-[200] font-black text-[10px] uppercase text-center min-w-[240px]"></div>
 
     <script>
-        let _supabase;
-        let menu = [], mesas = [], comandasCocina = [], empleados = [], domPedido = [], ventas = [];
-        let currentMesaId = null, currentTarget = '', pendingItem = null, selectedV1 = null;
-        let currentUser = "Empleado";
-        let isRefreshing = false;
+        // CONFIGURACIÓN SUPABASE
+        const supabaseUrl = 'https://wnboqxpggbvktrumqcat.supabase.co';
+        const supabaseKey = 'sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        window.onload = async () => {
-            try {
-                const SB_URL = "https://wnboqxpggbvktrumqcat.supabase.co";
-                const SB_KEY = "sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p"; 
-                _supabase = supabase.createClient(SB_URL, SB_KEY);
-                await refreshData();
-            } catch (error) {
-                showToast("Error de conexión");
-            }
+        const state = {
+            currentUser: null,
+            isAdmin: false,
+            menu: [],
+            mesas: [],
+            empleados: [],
+            externalOrders: [],
+            history: []
         };
 
-        async function handleLogin() {
-            const id = document.getElementById('login-id').value;
-            const pass = document.getElementById('login-pass').value;
-            if(!id || !pass) return showToast("Faltan datos");
-            try {
-                const { data } = await _supabase.from('empleados').select('*').eq('numero_empleado', id).eq('password', pass).single();
-                if (data) { currentUser = data.nombre; initApp(); } 
-                else { showToast("Acceso denegado"); }
-            } catch (e) { showToast("Error de acceso"); }
+        let currentActiveOrder = { type: null, id: null };
+        let tempProductConfig = null;
+
+        const refreshIcons = () => { if(typeof lucide !== 'undefined') lucide.createIcons(); };
+
+        async function loadInitialData() {
+            const { data: menu } = await _supabase.from('menu').select('*');
+            const { data: mesas } = await _supabase.from('mesas').select('*').order('id', { ascending: true });
+            const { data: empleados } = await _supabase.from('empleados').select('*');
+            const { data: ventas } = await _supabase.from('ventas').select('*');
+
+            state.menu = menu || [];
+            state.mesas = (mesas || []).map(m => ({...m, order: JSON.parse(m.order || '[]')}));
+            state.empleados = empleados || [];
+            state.history = ventas || [];
         }
 
-        function accessAdminDirect() { currentUser = "Admin"; initApp(); }
-        
-        async function initApp() {
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
-            document.getElementById('user-display').innerText = currentUser;
-            await refreshData();
-            setupRealtime();
-        }
-
-        async function refreshData() {
-            if(isRefreshing) return;
-            isRefreshing = true;
-            try {
-                const [mResp, msResp, cResp, eResp, vResp] = await Promise.all([
-                    _supabase.from('menu').select('*').order('nombre'),
-                    _supabase.from('mesas').select('*').order('id'),
-                    _supabase.from('comandas').select('*').eq('status', 'pendiente').order('created_at'),
-                    _supabase.from('empleados').select('*').order('nombre'),
-                    _supabase.from('ventas').select('*').order('created_at', { ascending: false }).limit(30)
-                ]);
-                menu = mResp.data || [];
-                mesas = msResp.data || [];
-                comandasCocina = cResp.data || [];
-                empleados = eResp.data || [];
-                ventas = vResp.data || [];
-                renderMesas(); renderMenuUI('domicilio'); updateCocinaUI();
-                renderVentasAdmin(); renderMenuAdmin(); renderMesasAdmin(); renderPersonalAdmin();
-                if(currentMesaId) renderPedidoMesa();
-                renderResumenDom();
-            } catch (e) { console.error(e); }
-            finally { isRefreshing = false; }
-        }
-
-        function setupRealtime() {
-            _supabase.channel('restaurante').on('postgres_changes', { event: '*', schema: 'public' }, () => {
-                clearTimeout(window.refreshTimer);
-                window.refreshTimer = setTimeout(refreshData, 500);
-            }).subscribe();
-        }
-
-        function renderMesas() {
-            const grid = document.getElementById('grid-mesas');
-            if(!grid) return;
-            document.getElementById('mesa-count').innerText = `${mesas.length} mesas`;
-            grid.innerHTML = mesas.map(m => `
-                <div onclick="abrirMesa(${m.id})" class="p-5 rounded-[2rem] border-4 text-center transition btn-active ${m.ocupada ? 'bg-orange-50 border-orange-400 shadow-orange-100' : 'bg-white border-slate-100 shadow-sm'}">
-                    <div class="text-[8px] font-black uppercase mb-1 ${m.ocupada ? 'text-orange-500' : 'text-slate-300'}">${m.ocupada ? 'Ocupada' : 'Libre'}</div>
-                    <div class="text-3xl font-black text-slate-800">${m.id}</div>
-                    <div class="text-[9px] font-black mt-2 inline-block px-3 py-1 rounded-full ${m.ocupada ? 'bg-orange-200 text-orange-700' : 'bg-slate-100 text-slate-400'}">$${(m.total || 0).toFixed(2)}</div>
-                </div>`).join('');
-        }
-
-        function abrirMesa(id) {
-            currentMesaId = id;
-            document.getElementById('modal-mesa-titulo').innerText = `Mesa ${id}`;
-            document.getElementById('modal-mesa').classList.remove('hidden');
-            renderPedidoMesa(); 
-            renderMenuUI('mesa');
-        }
-
-        function renderPedidoMesa() {
-            const mesa = mesas.find(m => m.id == currentMesaId);
-            if(!mesa) return;
-            const ped = [...(mesa.pedido || []), ...(mesa.pedidotemporal || [])];
-            document.getElementById('lista-pedido-mesa').innerHTML = ped.length ? ped.map(i => `
-                <li class="p-4 bg-white border rounded-2xl flex justify-between items-center shadow-sm">
-                    <div class="pr-2 text-left">
-                        <span class="text-xs font-black block">${i.nombre}</span>
-                        <span class="text-[9px] text-indigo-500 font-bold uppercase tracking-wider">${i.v1 || 'Estd.'} ${i.nota ? ' • ' + i.nota : ''}</span>
-                    </div>
-                    <span class="font-black text-indigo-900 text-sm">$${i.precio.toFixed(2)}</span>
-                </li>`).join('') : '<li class="text-center py-8 text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sin productos</li>';
-            
-            document.getElementById('total-mesa').innerText = `$${parseFloat(mesa.total || 0).toFixed(2)}`;
-            document.getElementById('btn-pre-pago').classList.toggle('hidden', !mesa.total || mesa.total <= 0);
-            document.getElementById('btn-cocina-mesa').classList.toggle('hidden', !mesa.pedidotemporal?.length);
-        }
-
-        function renderMenuUI(target) {
-            const containerId = target === 'mesa' ? 'menu-items-mesa' : 'menu-items-dom';
-            const targetEl = document.getElementById(containerId);
-            if(!targetEl) return;
-            
-            targetEl.innerHTML = menu.map(m => `
-                <button type="button" 
-                        onclick="openCustomModal(${m.id}, '${target}')" 
-                        class="flex justify-between items-center p-5 border-2 border-slate-50 rounded-2xl font-black text-sm bg-white text-left btn-active shadow-sm w-full mb-2">
-                    <span>${m.nombre}</span> 
-                    <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">$${m.precio.toFixed(2)}</span>
-                </button>`).join('');
-        }
-
-        function openCustomModal(itemId, target) {
-            currentTarget = target;
-            pendingItem = menu.find(m => m.id === itemId);
-            selectedV1 = null;
-            document.getElementById('custom-nota').value = "";
-            document.getElementById('custom-item-name').innerText = pendingItem.nombre;
-            
-            const variants = (pendingItem.v1 || "").split(',').filter(v => v.trim() !== "");
-            document.getElementById('v1-list').innerHTML = variants.map(v => `
-                <button onclick="selectV1(this, '${v.trim()}')" class="px-6 py-4 bg-slate-100 rounded-xl text-[11px] font-black uppercase btn-active">${v.trim()}</button>
-            `).join('') || '<p class="text-[9px] text-slate-300">Estándar</p>';
-            
-            document.getElementById('modal-custom').classList.remove('hidden');
-        }
-
-        function selectV1(el, val) { 
-            document.querySelectorAll('#v1-list button').forEach(b => b.classList.remove('variant-selected')); 
-            el.classList.add('variant-selected'); selectedV1 = val; 
-        }
-
-        document.getElementById('btn-confirm-custom').onclick = async function() {
-            if(!pendingItem) return;
-            const item = { nombre: pendingItem.nombre, precio: pendingItem.precio, v1: selectedV1 || 'Estándar', nota: document.getElementById('custom-nota').value };
-            if(currentTarget === 'mesa') {
-                const m = mesas.find(m => m.id == currentMesaId);
-                const nT = [...(m.pedidotemporal || []), item];
-                await _supabase.from('mesas').update({ total: (m.total || 0) + item.precio, pedidotemporal: nT, ocupada: true }).eq('id', currentMesaId);
+        async function attemptLogin() {
+            const idInput = document.getElementById('emp-id').value;
+            const passInput = document.getElementById('emp-pass').value;
+            await loadInitialData();
+            const emp = state.empleados.find(e => e.id === idInput && e.pass === passInput);
+            if (emp) {
+                state.currentUser = emp;
+                state.isAdmin = (emp.id === 'admin');
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('current-waiter-name').innerText = emp.name;
+                renderTables();
+                renderMenuAdmin();
+                renderMesasAdmin();
+                renderEmpleadosAdmin();
+                renderExternalOrders();
+                refreshIcons();
             } else {
-                domPedido.push(item);
-                renderResumenDom();
+                const err = document.getElementById('login-error');
+                err.classList.remove('hidden');
+                setTimeout(() => err.classList.add('hidden'), 3000);
             }
-            closeCustomModal(); 
-            await refreshData();
-        };
-
-        function renderResumenDom() {
-            const total = domPedido.reduce((a, v) => a + v.precio, 0);
-            document.getElementById('lista-pedido-dom').innerHTML = domPedido.map((i, idx) => `
-                <li class="flex justify-between items-center bg-white p-4 rounded-xl border mb-2 shadow-sm">
-                    <div class="text-left">
-                        <p class="text-[11px] font-black">${i.nombre}</p>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase">${i.v1}</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-black text-xs">$${i.precio.toFixed(2)}</span>
-                        <button onclick="removeFromDom(${idx})" class="p-2 text-red-400 text-xs">✕</button>
-                    </div>
-                </li>
-            `).join('');
-            document.getElementById('total-dom').innerText = `$${total.toFixed(2)}`;
         }
 
-        function removeFromDom(idx) { domPedido.splice(idx, 1); renderResumenDom(); }
-
-        async function enviarDomicilio() {
-            const nombre = document.getElementById('dom-nombre').value;
-            const direccion = document.getElementById('dom-direccion').value;
-            if(!nombre || !direccion || !domPedido.length) return showToast("Datos incompletos");
-            const total = domPedido.reduce((a, v) => a + v.precio, 0);
-            await _supabase.from('comandas').insert({ origen: `Domicilio: ${nombre}`, items: domPedido, status: 'pendiente' });
-            await _supabase.from('ventas').insert({ origen: `Domicilio: ${nombre}`, total, metodo: 'Pendiente', detalles: domPedido });
-            domPedido = [];
-            document.getElementById('dom-nombre').value = '';
-            document.getElementById('dom-direccion').value = '';
-            document.getElementById('dom-telefono').value = '';
-            showToast("Pedido enviado");
-            renderResumenDom(); refreshData();
-        }
-
-        function updateCocinaUI() {
-            const b = document.getElementById('cocina-badge');
-            b.innerText = comandasCocina.length;
-            b.classList.toggle('hidden', !comandasCocina.length);
-            document.getElementById('lista-cocina').innerHTML = comandasCocina.map(c => `
-                <div class="bg-white rounded-[2.5rem] border-t-8 border-indigo-700 p-6 shadow-md scale-up">
-                    <div class="flex justify-between items-start mb-4">
-                        <h4 class="font-black text-xs uppercase text-indigo-900">${c.origen}</h4>
-                        <span class="text-[9px] font-bold text-slate-400">${new Date(c.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <ul class="text-[11px] mb-6 space-y-2 border-b border-slate-50 pb-4">
-                        ${c.items.map(i => `<li class="flex flex-col text-left"><span class="font-black text-slate-700">• ${i.nombre}</span><span class="text-[9px] text-indigo-400 font-bold pl-3 uppercase">${i.v1} ${i.nota ? '| ' + i.nota : ''}</span></li>`).join('')}
-                    </ul>
-                    <button onclick="completarOrden(${c.id})" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black btn-active shadow-lg shadow-indigo-100">MARCAR LISTO</button>
-                </div>`).join('');
-        }
-
-        async function completarOrden(id) { await _supabase.from('comandas').update({ status: 'listo' }).eq('id', id); refreshData(); }
+        function logout() { location.reload(); }
 
         function checkAdminAccess() {
-            const pin = document.getElementById('admin-pin').value;
-            if(pin === '1234' || currentUser === 'Admin') {
-                document.getElementById('admin-login-box').classList.add('hidden');
-                document.getElementById('admin-panel').classList.remove('hidden');
-            } else {
-                showToast("PIN Incorrecto");
-                document.getElementById('admin-pin').value = '';
+            if (state.isAdmin) { showTab('admin'); } 
+            else {
+                const pin = prompt("Ingrese clave Maestra:");
+                if (pin === "admin123") { state.isAdmin = true; showTab('admin'); } 
+                else { alert("Acceso denegado."); }
             }
         }
 
-        function setAdminTab(tab) {
-            document.querySelectorAll('.admin-sub-tab').forEach(t => t.classList.add('hidden'));
-            document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
-            document.querySelectorAll('#admin-tabs-nav button').forEach(b => {
-                b.classList.remove('bg-indigo-600', 'text-white'); b.classList.add('bg-slate-200', 'text-slate-600');
-            });
-            const activeBtn = document.getElementById(`btn-tab-${tab}`);
-            activeBtn.classList.replace('bg-slate-200', 'bg-indigo-600'); activeBtn.classList.replace('text-slate-600', 'text-white');
-        }
-
-        async function enviarCocinaMesa() {
-            const m = mesas.find(m => m.id == currentMesaId);
-            if(!m || !m.pedidotemporal.length) return;
-            await _supabase.from('comandas').insert({ origen: `Mesa ${m.id}`, items: m.pedidotemporal, status: 'pendiente' });
-            await _supabase.from('mesas').update({ pedido: [...(m.pedido || []), ...m.pedidotemporal], pedidotemporal: [] }).eq('id', m.id);
-            showToast("Enviado a cocina"); refreshData();
-        }
-
-        async function procesarPago(metodo) {
-            const m = mesas.find(m => m.id == currentMesaId);
-            await _supabase.from('ventas').insert({ origen: `Mesa ${m.id}`, total: m.total, metodo, detalles: m.pedido });
-            await _supabase.from('mesas').update({ total: 0, ocupada: false, pedido: [], pedidotemporal: [] }).eq('id', m.id);
-            closePagoModal(); closeMesaModal(); showToast("Venta registrada"); refreshData();
-        }
-
-        function closeCustomModal() { document.getElementById('modal-custom').classList.add('hidden'); }
-        function closeMesaModal() { document.getElementById('modal-mesa').classList.add('hidden'); currentMesaId = null; }
-        function closePagoModal() { document.getElementById('modal-pago').classList.add('hidden'); }
-        function showTab(id) {
+        function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            window.scrollTo(0, 0);
-        }
-        function showToast(m) {
-            const t = document.getElementById('toast'); 
-            t.innerText = m; t.classList.remove('translate-y-32');
-            setTimeout(() => t.classList.add('translate-y-32'), 2500);
-        }
-        function logout() { location.reload(); }
-        function mostrarInterfazPago() {
-            const m = mesas.find(m => m.id == currentMesaId);
-            document.getElementById('pago-total-display').innerText = `$${m.total.toFixed(2)}`;
-            document.getElementById('modal-pago').classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('text-orange-600', 'bg-orange-50'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.getElementById(`btn-${tabName}`).classList.add('text-orange-600', 'bg-orange-50');
+            if(tabName === 'cocina') renderKitchen();
+            if(tabName === 'admin') { updateAdminStats(); renderMenuAdmin(); renderMesasAdmin(); renderEmpleadosAdmin(); }
+            refreshIcons();
         }
 
-        function renderVentasAdmin() {
-            const total = ventas.reduce((a, v) => a + (v.total || 0), 0);
-            document.getElementById('admin-ventas-hoy').innerText = `$${total.toFixed(2)}`;
-            document.getElementById('admin-ordenes-count').innerText = ventas.length;
-            document.getElementById('lista-ventas').innerHTML = ventas.map(v => `
-                <tr class="border-b text-[10px]"><td class="p-3 font-bold">${new Date(v.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td><td class="p-3 uppercase text-left">${v.origen}</td><td class="p-3 font-black text-indigo-700 text-left">$${v.total.toFixed(2)}</td><td class="p-3 text-left">${v.metodo}</td></tr>
-            `).join('');
+        // MESAS
+        async function addMesa() {
+            const num = parseInt(document.getElementById('m-number').value);
+            if(!num || state.mesas.find(m => m.id === num)) return alert("Número de mesa inválido o ya existe.");
+            const newMesa = { id: num, status: 'libre', order: '[]' };
+            await _supabase.from('mesas').insert([newMesa]);
+            state.mesas.push({ id: num, status: 'libre', order: [] });
+            state.mesas.sort((a,b) => a.id - b.id);
+            renderTables(); renderMesasAdmin();
+            document.getElementById('m-number').value = '';
+        }
+
+        async function deleteMesa(id) {
+            const mesa = state.mesas.find(m => m.id === id);
+            if(mesa.status === 'ocupada') return alert("No se puede eliminar una mesa ocupada.");
+            await _supabase.from('mesas').delete().eq('id', id);
+            state.mesas = state.mesas.filter(m => m.id !== id);
+            renderTables(); renderMesasAdmin();
+        }
+
+        function renderTables() {
+            const grid = document.getElementById('grid-mesas');
+            grid.innerHTML = '';
+            state.mesas.forEach(mesa => {
+                const isOccupied = mesa.status === 'ocupada';
+                const div = document.createElement('div');
+                div.className = `${isOccupied ? 'bg-orange-500 text-white' : 'bg-white text-gray-800 border-gray-100'} p-6 rounded-[2rem] shadow-xl border cursor-pointer hover:scale-105 transition-all flex flex-col items-center justify-center aspect-square`;
+                div.onclick = () => openOrder('mesa', mesa.id);
+                div.innerHTML = `<span class="text-3xl font-black">${mesa.id}</span><span class="text-[10px] font-black uppercase opacity-60 mt-1">${mesa.status}</span>`;
+                grid.appendChild(div);
+            });
         }
 
         function renderMesasAdmin() {
-            document.getElementById('admin-lista-mesas').innerHTML = mesas.map(m => `
-                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
-                    <span class="font-black text-xs uppercase text-left">Mesa #${m.id}</span>
-                    <button onclick="deleteMesa(${m.id})" class="text-red-500 font-bold text-[10px] uppercase p-2">Eliminar</button>
-                </div>
-            `).join('');
+            const list = document.getElementById('list-mesas-admin');
+            list.innerHTML = '';
+            state.mesas.forEach(m => {
+                const div = document.createElement('div');
+                div.className = "bg-gray-50 border p-3 rounded-xl flex flex-col items-center relative group";
+                div.innerHTML = `<span class="font-bold text-gray-800">${m.id}</span>
+                    <button onclick=\"deleteMesa(${m.id})\" class=\"absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all\">
+                        <i data-lucide=\"x\" class=\"w-3 h-3\"></i>
+                    </button>`;
+                list.appendChild(div);
+            });
+            refreshIcons();
         }
 
-        function renderPersonalAdmin() {
-            document.getElementById('admin-lista-personal').innerHTML = empleados.map(e => `
-                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border shadow-sm">
-                    <div class="text-left">
-                        <div class="font-black text-xs">${e.nombre}</div>
-                        <div class="text-[9px] text-slate-400 uppercase">ID: ${e.numero_empleado} | ${e.rol}</div>
-                    </div>
-                    <button onclick="deleteEmpleado(${e.id})" class="text-red-400 p-2">✕</button>
-                </div>
-            `).join('');
+        // EMPLEADOS
+        async function addEmpleado() {
+            const id = document.getElementById('e-id').value;
+            const name = document.getElementById('e-name').value;
+            const pass = document.getElementById('e-pass').value;
+            if(!id || !name || !pass) return alert("Complete todos los campos.");
+            const newEmp = { id, name, pass, sales: 0 };
+            await _supabase.from('empleados').insert([newEmp]);
+            state.empleados.push(newEmp);
+            renderEmpleadosAdmin();
+            document.getElementById('e-id').value = ''; document.getElementById('e-name').value = ''; document.getElementById('e-pass').value = '';
+        }
+
+        async function deleteEmpleado(id) {
+            if(id === 'admin') return alert("No se puede eliminar al admin.");
+            await _supabase.from('empleados').delete().eq('id', id);
+            state.empleados = state.empleados.filter(e => e.id !== id);
+            renderEmpleadosAdmin();
+        }
+
+        function renderEmpleadosAdmin() {
+            const tbody = document.getElementById('table-empleados');
+            tbody.innerHTML = '';
+            state.empleados.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="p-4 font-bold text-gray-700">${e.id}</td><td class="p-4 text-gray-600">${e.name}</td>
+                    <td class="p-4 font-black text-orange-600">$${parseFloat(e.sales || 0).toFixed(2)}</td>
+                    <td class="p-4 text-right">${e.id !== 'admin' ? `<button onclick=\"deleteEmpleado('${e.id}')\" class=\"text-red-400\"><i data-lucide=\"trash-2\"></i></button>` : ''}</td>`;
+                tbody.appendChild(tr);
+            });
+            refreshIcons();
+        }
+
+        // DOMICILIO
+        function toggleExtFields() {
+            const type = document.getElementById('ext-type').value;
+            document.getElementById('field-address').classList.toggle('hidden', type === 'pickup');
+            document.getElementById('field-time').classList.toggle('hidden', type === 'domicilio');
+        }
+
+        function openExternalOrder() {
+            const name = document.getElementById('ext-name').value;
+            const phone = document.getElementById('ext-phone').value;
+            if(!name || !phone) return alert("Complete nombre y celular.");
+            const newOrder = { id: Date.now(), type: document.getElementById('ext-type').value, customer: name, phone: phone, order: [], status: 'pendiente' };
+            state.externalOrders.push(newOrder);
+            renderExternalOrders();
+            openOrder('externo', newOrder.id);
+        }
+
+        function renderExternalOrders() {
+            const container = document.getElementById('list-external');
+            container.innerHTML = state.externalOrders.length ? '' : '<div class="text-center py-10 text-gray-400">Sin pedidos activos</div>';
+            state.externalOrders.forEach(o => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-5 rounded-3xl border flex justify-between items-center";
+                div.innerHTML = `<div><p class="font-black">${o.customer}</p><p class="text-xs text-gray-400 uppercase">${o.type}</p></div>
+                    <button onclick="openOrder('externo', ${o.id})" class="p-3 bg-gray-50 rounded-xl hover:text-orange-600"><i data-lucide="shopping-cart"></i></button>`;
+                container.appendChild(div);
+            });
+            refreshIcons();
+        }
+
+        // MODAL Y PEDIDOS
+        function openOrder(type, id) {
+            currentActiveOrder = { type, id };
+            const modal = document.getElementById('order-modal');
+            let currentOrderItems = [];
+            if(type === 'mesa') {
+                const m = state.mesas.find(x => x.id === id);
+                document.getElementById('order-title').innerText = `Mesa ${id}`;
+                currentOrderItems = m.order;
+            } else {
+                const o = state.externalOrders.find(x => x.id === id);
+                document.getElementById('order-title').innerText = o.customer;
+                currentOrderItems = o.order;
+            }
+            modal.classList.remove('hidden');
+            renderMenuSelector();
+            renderCurrentOrderItems(currentOrderItems);
+            cancelProductConfig();
+        }
+
+        function closeOrderModal() { document.getElementById('order-modal').classList.add('hidden'); }
+
+        function renderMenuSelector() {
+            const container = document.getElementById('menu-selector');
+            container.innerHTML = '';
+            state.menu.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-4 rounded-2xl border hover:border-orange-500 cursor-pointer shadow-sm";
+                div.onclick = () => initProductConfig(item);
+                div.innerHTML = `<p class="font-bold">${item.name}</p><p class="text-orange-600 font-black">$${item.price}</p>`;
+                container.appendChild(div);
+            });
+        }
+
+        // --- LÓGICA INTERACTIVA DE VARIANTES (MESERO) ---
+        function initProductConfig(menuItem) {
+            tempProductConfig = { ...menuItem, selV1: null, selV2: null };
+            
+            document.getElementById('menu-container').classList.add('hidden');
+            document.getElementById('summary-container').classList.add('hidden');
+            document.getElementById('product-config').classList.remove('hidden');
+            document.getElementById('config-name').innerText = menuItem.name;
+            document.getElementById('config-note').value = "";
+
+            // Variante A
+            const v1Box = document.getElementById('v1-options');
+            if(menuItem.varA) {
+                document.getElementById('v1-container').classList.remove('hidden');
+                v1Box.innerHTML = menuItem.varA.split(',').map(v => 
+                    `<button onclick="selectVar(1, '${v.trim()}', this)" class="variant-btn border-2 p-4 rounded-2xl font-bold bg-gray-50">${v.trim()}</button>`
+                ).join('');
+            } else {
+                document.getElementById('v1-container').classList.add('hidden');
+            }
+
+            // Variante B
+            const v2Box = document.getElementById('v2-options');
+            if(menuItem.varB) {
+                document.getElementById('v2-container').classList.remove('hidden');
+                v2Box.innerHTML = menuItem.varB.split(',').map(v => 
+                    `<button onclick="selectVar(2, '${v.trim()}', this)" class="variant-btn border-2 p-3 rounded-xl font-bold bg-gray-50 text-left">${v.trim()}</button>`
+                ).join('');
+            } else {
+                document.getElementById('v2-container').classList.add('hidden');
+            }
+        }
+
+        function selectVar(num, val, btn) {
+            const parent = btn.parentElement;
+            parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if(num === 1) tempProductConfig.selV1 = val;
+            else tempProductConfig.selV2 = val;
+        }
+
+        function confirmProductAdd() {
+            if((tempProductConfig.varA && !tempProductConfig.selV1) || (tempProductConfig.varB && !tempProductConfig.selV2)) {
+                return alert("Seleccione las opciones necesarias.");
+            }
+
+            const variantStr = [tempProductConfig.selV1, tempProductConfig.selV2].filter(Boolean).join(' - ') || "Sencillo";
+            const item = { 
+                ...tempProductConfig, 
+                uid: Date.now(), 
+                note: document.getElementById('config-note').value, 
+                selectedVar: variantStr 
+            };
+            
+            if(currentActiveOrder.type === 'mesa') {
+                const m = state.mesas.find(x => x.id === currentActiveOrder.id);
+                m.status = 'ocupada';
+                m.order.push(item);
+                renderCurrentOrderItems(m.order);
+                renderTables();
+                syncMesaToSupabase(m.id);
+            } else {
+                const o = state.externalOrders.find(x => x.id === currentActiveOrder.id);
+                o.order.push(item);
+                renderCurrentOrderItems(o.order);
+            }
+            cancelProductConfig();
+        }
+
+        function cancelProductConfig() {
+            document.getElementById('product-config').classList.add('hidden');
+            document.getElementById('menu-container').classList.remove('hidden');
+            document.getElementById('summary-container').classList.remove('hidden');
+            tempProductConfig = null;
+        }
+
+        // --- COBRO CON TARJETA ---
+        function openPaymentOptions() {
+            const m = currentActiveOrder.type === 'mesa' ? state.mesas.find(x => x.id === currentActiveOrder.id) : state.externalOrders.find(x => x.id === currentActiveOrder.id);
+            if(!m.order.length) return alert("Pedido vacío.");
+            document.getElementById('payment-modal').classList.remove('hidden');
+            refreshIcons();
+        }
+
+        function closePaymentModal() { document.getElementById('payment-modal').classList.add('hidden'); }
+
+        async function syncMesaToSupabase(mesaId) {
+            const m = state.mesas.find(x => x.id === mesaId);
+            await _supabase.from('mesas').update({ status: m.status, order: JSON.stringify(m.order) }).eq('id', mesaId);
+        }
+
+        function removeFromOrder(uid) {
+            if(currentActiveOrder.type === 'mesa') {
+                const m = state.mesas.find(x => x.id === currentActiveOrder.id);
+                m.order = m.order.filter(i => i.uid !== uid);
+                if(m.order.length === 0) m.status = 'libre';
+                renderCurrentOrderItems(m.order); renderTables(); syncMesaToSupabase(m.id);
+            } else {
+                const o = state.externalOrders.find(x => x.id === currentActiveOrder.id);
+                o.order = o.order.filter(i => i.uid !== uid);
+                renderCurrentOrderItems(o.order);
+            }
+        }
+
+        function renderCurrentOrderItems(order) {
+            const container = document.getElementById('order-items');
+            container.innerHTML = order.length ? '' : '<p class="text-center text-gray-300 py-10">Pedido vacío</p>';
+            let total = 0;
+            order.forEach(item => {
+                total += item.price;
+                const div = document.createElement('div');
+                div.className = "bg-gray-50 p-4 rounded-2xl flex justify-between items-center group";
+                div.innerHTML = `<div><p class="font-bold">${item.name}</p><p class="text-xs text-orange-600 font-bold uppercase">${item.selectedVar}</p><p class="text-xs text-red-400 italic">${item.note}</p></div>
+                    <div class="flex items-center"><span class="font-bold mr-4">$${item.price}</span>
+                    <button onclick="removeFromOrder(${item.uid})" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`;
+                container.appendChild(div);
+            });
+            document.getElementById('order-total').innerText = `$${total.toFixed(2)}`;
+            refreshIcons();
+        }
+
+        function sendToKitchen() { alert("Enviado a cocina"); closeOrderModal(); }
+
+        async function finalizeSale(metodoPago) {
+            let order, total = 0;
+            if(currentActiveOrder.type === 'mesa') {
+                const m = state.mesas.find(x => x.id === currentActiveOrder.id);
+                order = [...m.order]; m.order = []; m.status = 'libre'; syncMesaToSupabase(m.id);
+            } else {
+                const o = state.externalOrders.find(x => x.id === currentActiveOrder.id);
+                order = [...o.order]; state.externalOrders = state.externalOrders.filter(x => x.id !== o.id);
+            }
+            
+            order.forEach(i => total += i.price);
+            
+            const newVenta = { 
+                waiter: state.currentUser.name, 
+                total, 
+                items: JSON.stringify(order), 
+                metodo_pago: metodoPago, // Se guarda el método (asegura tener esta columna en ventas)
+                created_at: new Date() 
+            };
+
+            await _supabase.from('ventas').insert([newVenta]);
+            state.history.push(newVenta);
+            
+            const emp = state.empleados.find(e => e.id === state.currentUser.id);
+            if(emp) {
+                emp.sales = (parseFloat(emp.sales) || 0) + total;
+                await _supabase.from('empleados').update({ sales: emp.sales }).eq('id', emp.id);
+            }
+            
+            alert(`Venta completada (${metodoPago}).`); 
+            closePaymentModal();
+            closeOrderModal(); 
+            renderTables(); 
+            renderExternalOrders();
+        }
+
+        // COCINA
+        function renderKitchen() {
+            const container = document.getElementById('kitchen-orders');
+            const pending = [];
+            state.mesas.filter(m => m.order.length).forEach(m => pending.push({label: `MESA ${m.id}`, items: m.order}));
+            state.externalOrders.filter(o => o.order.length).forEach(o => pending.push({label: o.customer, items: o.order}));
+            container.innerHTML = pending.length ? '' : '<div class="col-span-full py-20 text-center text-gray-400">Sin comandas</div>';
+            pending.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-6 rounded-3xl shadow-xl border-t-8 border-orange-500";
+                div.innerHTML = `<h3 class="text-xl font-black mb-4">${p.label}</h3>
+                    <div class="space-y-2 mb-4">${p.items.map(i => `<div class="bg-gray-50 p-2 rounded-lg"><p class="text-sm font-bold">1x ${i.name}</p><p class="text-[10px] text-orange-600 font-bold uppercase">${i.selectedVar}</p><p class="text-[10px] text-red-500">${i.note}</p></div>`).join('')}</div>
+                    <button onclick="this.parentElement.remove()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">DESPACHAR</button>`;
+                container.appendChild(div);
+            });
+            refreshIcons();
+        }
+
+        function refreshKitchen() { renderKitchen(); }
+
+        // ADMIN
+        function updateAdminStats() {
+            let total = 0; state.history.forEach(h => total += parseFloat(h.total));
+            document.getElementById('total-ventas-dia').innerText = `$${total.toFixed(2)}`;
+            let top = { name: '---', sales: -1 };
+            state.empleados.forEach(e => { if(e.sales > top.sales) top = e; });
+            document.getElementById('top-waiter').innerText = top.name;
+        }
+
+        async function addProduct() {
+            const name = document.getElementById('p-name').value;
+            const price = parseFloat(document.getElementById('p-price').value);
+            const varA = document.getElementById('p-varA').value;
+            const varB = document.getElementById('p-varB').value;
+            if(!name || !price) return alert("Requerido.");
+            const newItem = { name, price, varA, varB };
+            const { data } = await _supabase.from('menu').insert([newItem]).select();
+            if(data) state.menu.push(data[0]);
+            renderMenuAdmin();
         }
 
         function renderMenuAdmin() {
-            document.getElementById('admin-lista-menu').innerHTML = menu.map(m => `
-                <div class="flex justify-between items-center bg-white p-4 rounded-2xl border mb-2">
-                    <span class="text-xs font-black uppercase text-left">${m.nombre} <span class="text-indigo-500 font-bold">($${m.precio})</span></span>
-                    <button onclick="deleteMenuItem(${m.id})" class="text-red-400 p-2">✕</button>
-                </div>
-            `).join('');
+            const tbody = document.getElementById('table-menu');
+            tbody.innerHTML = '';
+            state.menu.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="p-3 font-bold">${item.name}</td><td class="p-3">$${item.price}</td>
+                    <td class="p-3 text-right"><button onclick="deleteProduct(${item.id})" class="text-red-400"><i data-lucide="trash-2"></i></button></td>`;
+                tbody.appendChild(tr);
+            });
+            refreshIcons();
         }
 
-        async function saveEmpleado() {
-            const nombre = document.getElementById('new-emp-nombre').value;
-            const numero_empleado = document.getElementById('new-emp-id').value;
-            const password = document.getElementById('new-emp-pass').value;
-            const rol = document.getElementById('new-emp-rol').value;
-            if(!nombre || !numero_empleado || !password) return showToast("Faltan campos");
-            await _supabase.from('empleados').insert({ nombre, numero_empleado, password, rol });
-            refreshData();
+        async function deleteProduct(id) { 
+            await _supabase.from('menu').delete().eq('id', id);
+            state.menu = state.menu.filter(p => p.id !== id); renderMenuAdmin(); 
         }
 
-        async function deleteEmpleado(id) { if(confirm("¿Eliminar?")) { await _supabase.from('empleados').delete().eq('id', id); refreshData(); } }
-        async function saveMenuItem() {
-            const nombre = document.getElementById('new-item-nombre').value;
-            const precio = parseFloat(document.getElementById('new-item-precio').value);
-            const v1 = document.getElementById('new-item-v1').value;
-            if(!nombre || isNaN(precio)) return showToast("Datos inválidos");
-            await _supabase.from('menu').insert({ nombre, precio, v1 });
-            refreshData();
-        }
-        async function deleteMenuItem(id) { if(confirm("¿Eliminar?")) { await _supabase.from('menu').delete().eq('id', id); refreshData(); } }
-        async function addMesa() {
-            const nextId = mesas.length > 0 ? Math.max(...mesas.map(m => m.id)) + 1 : 1;
-            await _supabase.from('mesas').insert({ id: nextId, total: 0, ocupada: false, pedido: [], pedidotemporal: [] });
-            refreshData();
-        }
-        async function deleteMesa(id) {
-            const m = mesas.find(x => x.id == id);
-            if(m && m.ocupada) return showToast("Mesa ocupada");
-            await _supabase.from('mesas').delete().eq('id', id);
-            refreshData();
+        function generateReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("CORTE DE CAJA - SABORPOS", 20, 25);
+            doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 35);
+            let total = 0; state.history.forEach(h => total += parseFloat(h.total));
+            doc.text(`Total Vendido: $${total.toFixed(2)}`, 20, 50);
+            doc.text("Ventas por Empleado:", 20, 65);
+            state.empleados.forEach((e, i) => doc.text(`${e.name}: $${parseFloat(e.sales || 0).toFixed(2)}`, 30, 75 + (i * 10)));
+            doc.save("corte.pdf");
         }
     </script>
 </body>
