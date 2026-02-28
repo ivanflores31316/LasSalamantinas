@@ -14,126 +14,110 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .variant-btn.active { border-color: #ea580c; background-color: #fff7ed; color: #ea580c; }
-        
         @media print {
             body * { visibility: hidden; }
             #print-section, #print-section * { visibility: visible; }
-            #print-section { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; }
+            #print-section { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; }
         }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <div id="print-section" class="hidden"></div>
-
     <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-orange-600">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm m-4">
-            <div class="text-center mb-8">
-                <i data-lucide="utensils-crosses" class="text-orange-600 w-12 h-12 mx-auto mb-2"></i>
-                <h1 class="text-3xl font-black text-gray-800">SaborPOS</h1>
-            </div>
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm m-4 text-center">
+            <i data-lucide="utensils-crosses" class="text-orange-600 w-12 h-12 mx-auto mb-2"></i>
+            <h1 class="text-3xl font-black text-gray-800 mb-8 italic">SaborPOS</h1>
             <div class="space-y-4">
-                <input type="text" id="emp-id" placeholder="ID de Usuario" class="w-full px-4 py-3 rounded-xl border outline-none">
-                <input type="password" id="emp-pass" placeholder="Contraseña" class="w-full px-4 py-3 rounded-xl border outline-none">
-                <button onclick="attemptLogin()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold">Entrar</button>
+                <input type="text" id="emp-id" placeholder="ID Usuario" class="w-full px-4 py-3 rounded-xl border outline-none">
+                <input type="password" id="emp-pass" placeholder="PIN" class="w-full px-4 py-3 rounded-xl border outline-none">
+                <button onclick="attemptLogin()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold">ENTRAR</button>
             </div>
-            <p id="login-error" class="text-red-500 text-sm mt-4 text-center hidden">Credenciales Incorrectas</p>
+            <p id="login-error" class="text-red-500 text-sm mt-4 hidden">Credenciales Incorrectas</p>
         </div>
     </div>
 
     <div id="main-app" class="hidden pb-24 lg:pb-0 lg:pl-64">
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t lg:border-t-0 lg:border-r lg:w-64 lg:top-0 lg:h-full z-40 flex lg:flex-col justify-around lg:justify-start lg:p-4 shadow-2xl">
             <div class="hidden lg:block mb-8 px-4 pt-4 font-black text-2xl text-orange-600">SaborPOS</div>
-            <button onclick="showTab('mesas')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-mesas"><i data-lucide="layout-grid" class="lg:mr-3"></i><span>Mesas</span></button>
+            <button onclick="showTab('mesas')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-mesas"><i data-lucide="layout-grid" class="lg:mr-3"></i><span>Salón</span></button>
             <button onclick="showTab('domicilio')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-domicilio"><i data-lucide="truck" class="lg:mr-3"></i><span>Envíos</span></button>
             <button onclick="showTab('cocina')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-cocina"><i data-lucide="flame" class="lg:mr-3"></i><span>Cocina</span></button>
             <button onclick="checkAdminAccess()" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-admin"><i data-lucide="shield-check" class="lg:mr-3"></i><span>Admin</span></button>
-            <button onclick="location.reload()" class="p-3 flex flex-col lg:flex-row items-center lg:px-4 text-red-500 mt-auto"><i data-lucide="log-out" class="lg:mr-3"></i><span>Cerrar</span></button>
+            <button onclick="location.reload()" class="p-3 flex flex-col lg:flex-row items-center lg:px-4 text-red-500 mt-auto"><i data-lucide="log-out" class="lg:mr-3"></i><span>Salir</span></button>
         </nav>
 
         <main class="p-4 lg:p-8 max-w-7xl mx-auto">
             <div id="tab-mesas" class="tab-content active">
-                <h2 class="text-3xl font-black mb-6">Salón</h2>
+                <h2 class="text-3xl font-black mb-6">Mesas</h2>
                 <div id="grid-mesas" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             </div>
 
+            <div id="tab-cocina" class="tab-content">
+                <h2 class="text-3xl font-black mb-6">Comandas Cocina</h2>
+                <div id="kitchen-orders" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
             <div id="tab-domicilio" class="tab-content">
-                <h2 class="text-3xl font-black mb-6">Pedidos Externos</h2>
+                <h2 class="text-3xl font-black mb-6">Envíos y Pickup</h2>
                 <div class="grid lg:grid-cols-3 gap-8">
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm h-fit">
-                        <div class="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
-                            <button onclick="setExternalType('domicilio')" id="type-dom" class="flex-1 py-2 rounded-lg font-bold text-sm bg-orange-600 text-white">Domicilio</button>
-                            <button onclick="setExternalType('pickup')" id="type-pick" class="flex-1 py-2 rounded-lg font-bold text-sm text-gray-500">Pickup</button>
-                        </div>
-                        <div class="space-y-4">
-                            <input type="text" id="ext-name" placeholder="Nombre del Cliente" class="w-full p-3 border rounded-xl outline-none">
-                            <input type="tel" id="ext-phone" placeholder="Celular" class="w-full p-3 border rounded-xl outline-none">
-                            <div id="div-address">
-                                <textarea id="ext-address" placeholder="Dirección completa" class="w-full p-3 border rounded-xl outline-none h-24"></textarea>
-                            </div>
-                            <button onclick="createExternalOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg">Crear Pedido</button>
-                        </div>
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
+                        <input type="text" id="ext-name" placeholder="Nombre Cliente" class="w-full p-3 border rounded-xl mb-3">
+                        <input type="tel" id="ext-phone" placeholder="Teléfono" class="w-full p-3 border rounded-xl mb-3">
+                        <textarea id="ext-address" placeholder="Dirección Completa" class="w-full p-3 border rounded-xl mb-4 h-24"></textarea>
+                        <button onclick="createExternalOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold">Crear Pedido</button>
                     </div>
                     <div id="list-external" class="lg:col-span-2 grid gap-4"></div>
                 </div>
             </div>
 
-            <div id="tab-cocina" class="tab-content">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-3xl font-black">Cocina</h2>
-                    <button onclick="loadInitialData().then(renderKitchen)" class="bg-green-600 text-white px-6 py-2 rounded-xl flex items-center"><i data-lucide="refresh-cw" class="mr-2 w-4"></i> Actualizar</button>
-                </div>
-                <div id="kitchen-orders" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </div>
-
             <div id="tab-admin" class="tab-content">
-                <div class="flex flex-col md:flex-row justify-between mb-8 gap-4">
-                    <h2 class="text-3xl font-black">Admin</h2>
-                    <div class="bg-white p-4 rounded-2xl border flex items-center gap-4">
-                        <p class="text-xs font-bold text-gray-400">FONDO $</p>
-                        <input type="number" id="cash-fondo" onchange="updateFondoCaja()" class="font-bold text-xl w-24 outline-none ml-1">
-                    </div>
-                </div>
+                <h2 class="text-3xl font-black mb-6">Panel de Control</h2>
+                
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-xs font-bold text-gray-400 uppercase">Ventas Turno</p>
-                        <h3 id="total-ventas-dia" class="text-3xl font-black text-gray-800">$0.00</h3>
+                        <p class="text-xs font-bold text-gray-400">VENTAS HOY</p>
+                        <h3 id="total-ventas-dia" class="text-3xl font-black">$0.00</h3>
                     </div>
                     <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-xs font-bold text-gray-400 uppercase">Caja Total</p>
-                        <h3 id="total-en-caja" class="text-3xl font-black text-green-600">$0.00</h3>
+                        <p class="text-xs font-bold text-gray-400">EFECTIVO ESTIMADO</p>
+                        <h3 id="total-efectivo" class="text-3xl font-black text-green-600">$0.00</h3>
                     </div>
-                    <button onclick="doCorteCaja()" class="bg-gray-900 text-white rounded-3xl p-6 font-bold flex flex-col items-center justify-center"><i data-lucide="printer" class="mb-2"></i> REALIZAR CORTE</button>
+                    <button onclick="doCorteCaja()" class="bg-gray-900 text-white rounded-3xl p-6 font-bold flex flex-col items-center justify-center hover:bg-black transition-colors">
+                        <i data-lucide="file-text" class="mb-2"></i> REALIZAR CORTE (PDF)
+                    </button>
                 </div>
+
                 <div class="grid lg:grid-cols-2 gap-8">
                     <div class="bg-white p-6 rounded-3xl border">
-                        <h3 class="font-bold mb-4">Menú</h3>
-                        <div class="grid grid-cols-2 gap-2 mb-4">
-                            <input type="text" id="p-name" placeholder="Nombre" class="p-2 border rounded-lg">
-                            <input type="number" id="p-price" placeholder="Precio" class="p-2 border rounded-lg">
-                            <input type="text" id="p-varA" placeholder="Variante 1" class="p-2 border rounded-lg">
-                            <input type="text" id="p-varB" placeholder="Variante 2" class="p-2 border rounded-lg">
-                            <button onclick="addProduct()" class="col-span-2 bg-orange-600 text-white p-2 rounded-lg font-bold">Guardar</button>
+                        <h4 class="font-bold mb-4">Añadir al Menú</h4>
+                        <div class="space-y-2">
+                            <input type="text" id="p-name" placeholder="Producto" class="w-full p-2 border rounded-lg">
+                            <input type="number" id="p-price" placeholder="Precio" class="w-full p-2 border rounded-lg">
+                            <input type="text" id="p-varA" placeholder="Variante A (ej: Chica, Mediana)" class="w-full p-2 border rounded-lg text-sm">
+                            <input type="text" id="p-varB" placeholder="Variante B (ej: Con Todo, Sin Cebolla)" class="w-full p-2 border rounded-lg text-sm">
+                            <button onclick="addProduct()" class="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">Guardar</button>
                         </div>
-                        <div id="table-menu" class="max-h-60 overflow-y-auto divide-y"></div>
+                        <div id="admin-menu-list" class="mt-6 space-y-2 max-h-60 overflow-y-auto"></div>
                     </div>
-                    <div class="bg-white p-6 rounded-3xl border">
-                        <h3 class="font-bold mb-4">Empleados</h3>
-                        <div class="grid grid-cols-3 gap-2 mb-4">
-                            <input type="text" id="e-id" placeholder="ID" class="p-2 border rounded-lg">
-                            <input type="text" id="e-name" placeholder="Nombre" class="p-2 border rounded-lg">
-                            <input type="text" id="e-pass" placeholder="PIN" class="p-2 border rounded-lg">
-                            <button onclick="addEmployee()" class="col-span-3 bg-blue-600 text-white p-2 rounded-lg font-bold">Añadir</button>
+
+                    <div class="space-y-8">
+                        <div class="bg-white p-6 rounded-3xl border">
+                            <h4 class="font-bold mb-4">Mesas</h4>
+                            <div class="flex gap-2 mb-4">
+                                <input type="number" id="m-number" placeholder="#" class="w-20 p-2 border rounded-lg">
+                                <button onclick="addMesa()" class="bg-gray-800 text-white px-4 rounded-lg">Añadir</button>
+                            </div>
+                            <div id="admin-mesas-list" class="flex flex-wrap gap-2"></div>
                         </div>
-                        <div id="table-emps" class="max-h-60 overflow-y-auto divide-y"></div>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl border lg:col-span-2">
-                        <h3 class="font-bold mb-4">Mapa de Mesas</h3>
-                        <div class="flex gap-2 mb-4">
-                            <input type="number" id="m-number" placeholder="Número" class="p-2 border rounded-lg w-32">
-                            <button onclick="addMesa()" class="bg-green-600 text-white px-6 rounded-lg font-bold">Añadir Mesa</button>
+                        <div class="bg-white p-6 rounded-3xl border">
+                            <h4 class="font-bold mb-4">Empleados</h4>
+                            <div class="flex gap-2 mb-4">
+                                <input type="text" id="e-name" placeholder="Nombre" class="flex-1 p-2 border rounded-lg">
+                                <input type="text" id="e-pass" placeholder="PIN" class="w-20 p-2 border rounded-lg">
+                                <button onclick="addEmployee()" class="bg-gray-800 text-white px-4 rounded-lg">Añadir</button>
+                            </div>
+                            <div id="admin-emps-list" class="space-y-1"></div>
                         </div>
-                        <div id="list-mesas-admin" class="grid grid-cols-4 md:grid-cols-10 gap-2"></div>
                     </div>
                 </div>
             </div>
@@ -143,8 +127,8 @@
     <div id="order-modal" class="fixed inset-0 bg-black/60 z-[200] hidden flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-5xl h-[90vh] rounded-[2rem] flex flex-col overflow-hidden">
             <div class="p-6 bg-orange-600 text-white flex justify-between items-center">
-                <h3 id="order-title" class="text-2xl font-black">Pedido</h3>
-                <button onclick="closeOrderModal()" class="bg-white/20 p-2 rounded-full"><i data-lucide="x"></i></button>
+                <h3 id="order-title" class="text-2xl font-black italic">Pedido</h3>
+                <button onclick="closeOrderModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                 <div id="menu-container" class="flex-1 p-6 overflow-y-auto bg-gray-50">
@@ -153,19 +137,25 @@
                 <div id="product-config" class="hidden flex-1 p-6 flex flex-col">
                     <h4 id="config-name" class="text-2xl font-bold mb-6"></h4>
                     <div class="space-y-6 flex-1">
-                        <div id="v1-container"><label class="font-bold text-sm block mb-2">Variante 1</label><div id="v1-options" class="grid grid-cols-2 gap-2"></div></div>
-                        <div id="v2-container"><label class="font-bold text-sm block mb-2">Variante 2</label><div id="v2-options" class="grid grid-cols-2 gap-2"></div></div>
-                        <textarea id="config-note" class="w-full p-4 bg-gray-50 border rounded-xl" placeholder="Notas..."></textarea>
+                        <div id="v1-container">
+                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Opción A</label>
+                            <div id="v1-options" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div id="v2-container">
+                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Opción B</label>
+                            <div id="v2-options" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <textarea id="config-note" class="w-full p-4 border rounded-2xl h-24" placeholder="Notas..."></textarea>
                     </div>
                     <div class="flex gap-4 mt-6">
-                        <button onclick="cancelConfig()" class="flex-1 p-4 bg-gray-200 rounded-xl">Cancelar</button>
-                        <button onclick="confirmItem()" class="flex-1 p-4 bg-orange-600 text-white rounded-xl">Agregar</button>
+                        <button onclick="cancelConfig()" class="flex-1 p-4 bg-gray-200 rounded-2xl font-bold">Atrás</button>
+                        <button onclick="confirmItem()" class="flex-1 p-4 bg-orange-600 text-white rounded-2xl font-bold">Agregar</button>
                     </div>
                 </div>
                 <div class="w-full md:w-80 p-6 border-l bg-white flex flex-col">
                     <div id="order-items" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
                     <div class="border-t pt-4">
-                        <div class="flex justify-between font-black text-xl mb-4"><span>TOTAL</span><span id="order-total">$0.00</span></div>
+                        <div class="flex justify-between font-black text-2xl mb-4"><span>TOTAL</span><span id="order-total">$0.00</span></div>
                         <button onclick="sendKitchenSignal()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold mb-2">ORDENAR</button>
                         <button onclick="openPayment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold">COBRAR</button>
                     </div>
@@ -174,12 +164,12 @@
         </div>
     </div>
 
-    <div id="payment-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex items-center justify-center p-4">
+    <div id="payment-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex items-center justify-center">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center">
-            <h3 class="text-xl font-bold mb-6">Seleccionar Pago</h3>
+            <h3 class="text-xl font-bold mb-6 italic">Método de Pago</h3>
             <div class="grid gap-3">
-                <button onclick="finalizeSale('Efectivo')" class="p-4 bg-gray-100 rounded-2xl font-bold">EFECTIVO</button>
-                <button onclick="finalizeSale('Tarjeta')" class="p-4 bg-gray-100 rounded-2xl font-bold">TARJETA</button>
+                <button onclick="finalizeSale('Efectivo')" class="p-5 bg-gray-100 rounded-2xl font-bold hover:bg-orange-100">EFECTIVO</button>
+                <button onclick="finalizeSale('Tarjeta')" class="p-5 bg-gray-100 rounded-2xl font-bold hover:bg-orange-100">TARJETA</button>
                 <button onclick="document.getElementById('payment-modal').classList.add('hidden')" class="mt-4 text-gray-400">Regresar</button>
             </div>
         </div>
@@ -190,212 +180,77 @@
         const supabaseKey = 'sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p'; 
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        let state = { currentUser: null, isAdmin: false, menu: [], mesas: [], empleados: [], history: [], externalOrders: [], fondoCaja: 0, currentExternalType: 'domicilio', kitchenHideList: [] };
+        let state = { currentUser: null, isAdmin: false, menu: [], mesas: [], history: [], externalOrders: [], employees: [], kitchenHide: [] };
         let activeTarget = { type: null, id: null };
         let tempItem = null;
 
         const refreshIcons = () => lucide.createIcons();
 
         async function loadInitialData() {
-            const { data: menu } = await _supabase.from('menu').select('*');
-            const { data: mesas } = await _supabase.from('mesas').select('*').order('id', { ascending: true });
-            const { data: empleados } = await _supabase.from('empleados').select('*');
+            const { data: menu } = await _supabase.from('menu').select('*').order('name');
+            const { data: mesas } = await _supabase.from('mesas').select('*').order('id', {ascending: true});
             const { data: ventas } = await _supabase.from('ventas').select('*').eq('archivado', false);
+            const { data: emps } = await _supabase.from('empleados').select('*');
+            
             state.menu = menu || [];
             state.mesas = (mesas || []).map(m => ({...m, order: JSON.parse(m.order || '[]')}));
-            state.empleados = empleados || [];
             state.history = ventas || [];
-            state.fondoCaja = parseFloat(localStorage.getItem('fondoCaja')) || 0;
-            document.getElementById('cash-fondo').value = state.fondoCaja;
+            state.employees = emps || [];
+            
             updateAdminStats();
+            renderTables();
+            renderKitchen();
+            renderAdminLists();
+            renderExternalOrders();
+        }
+
+        function setupRealtime() {
+            _supabase.channel('pos-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, () => loadInitialData())
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => loadInitialData())
+                .subscribe();
         }
 
         async function attemptLogin() {
             await loadInitialData();
             const id = document.getElementById('emp-id').value;
             const pass = document.getElementById('emp-pass').value;
-            const emp = state.empleados.find(e => e.id === id && e.pass === pass);
+            const emp = state.employees.find(e => e.id == id && e.pass == pass);
             if(emp) {
                 state.currentUser = emp;
                 state.isAdmin = (id === 'admin');
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
-                showTab('mesas');
-                renderTables();
-            } else { document.getElementById('login-error').classList.remove('hidden'); }
-        }
-
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('text-orange-600', 'bg-orange-100'));
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            document.getElementById(`btn-${tabName}`).classList.add('text-orange-600', 'bg-orange-100');
-            if(tabName === 'cocina') renderKitchen();
-            if(tabName === 'admin') { updateAdminStats(); renderMenuAdmin(); renderMesasAdmin(); renderEmpsAdmin(); }
-            if(tabName === 'domicilio') renderExternalOrders();
-            refreshIcons();
+                setupRealtime();
+                refreshIcons();
+            } else { alert("Error de acceso"); }
         }
 
         function renderTables() {
             const grid = document.getElementById('grid-mesas');
             grid.innerHTML = '';
             state.mesas.forEach(m => {
-                const isOccupied = m.order.length > 0;
+                const occ = m.order.length > 0;
                 const div = document.createElement('div');
-                div.className = `aspect-square rounded-3xl flex flex-col items-center justify-center cursor-pointer border-2 transition-all ${isOccupied ? 'bg-orange-500 text-white border-orange-600' : 'bg-white border-gray-100 hover:border-orange-200'}`;
+                div.className = `aspect-square rounded-[2rem] flex flex-col items-center justify-center cursor-pointer border-2 transition-all ${occ ? 'bg-orange-500 text-white border-orange-600 shadow-lg scale-105' : 'bg-white text-gray-800 hover:border-orange-300'}`;
                 div.onclick = () => openOrder('mesa', m.id);
-                div.innerHTML = `<span class="text-4xl font-black">${m.id}</span><span class="text-[10px] font-bold uppercase opacity-60">${isOccupied ? 'Ocupada' : 'Libre'}</span>`;
+                div.innerHTML = `<span class="text-4xl font-black">${m.id}</span><span class="text-[10px] uppercase font-bold opacity-60">${occ ? 'Ocupada' : 'Libre'}</span>`;
                 grid.appendChild(div);
             });
         }
 
-        // --- LÓGICA DE COBRO (AQUÍ ES DONDE SE PONE EN CERO) ---
-        async function finalizeSale(metodo) {
-            let order, total = 0;
-            
-            if(activeTarget.type === 'mesa') {
-                const m = state.mesas.find(x => x.id === activeTarget.id);
-                order = [...m.order];
-                total = order.reduce((acc, item) => acc + parseFloat(item.price), 0);
-                
-                // SOLO AL COBRAR LIMPIAMOS LA MESA EN SUPABASE
-                m.order = [];
-                await _supabase.from('mesas').update({ status: 'libre', order: '[]' }).eq('id', m.id);
-                
-                // También quitar de la vista temporal de cocina
-                state.kitchenHideList.push(`mesa-${m.id}`);
-            } else {
-                const o = state.externalOrders.find(x => x.id === activeTarget.id);
-                order = [...o.order];
-                total = order.reduce((acc, item) => acc + parseFloat(item.price), 0);
-                state.externalOrders = state.externalOrders.filter(x => x.id !== o.id);
-                state.kitchenHideList.push(`ext-${o.id}`);
-            }
-
-            if(total <= 0) return alert("No hay productos para cobrar.");
-
-            // Registrar Venta
-            await _supabase.from('ventas').insert([{
-                waiter: state.currentUser.name,
-                total: total,
-                items: JSON.stringify(order),
-                metodo_pago: metodo,
-                archivado: false
-            }]);
-
-            // Sumar al empleado
-            const emp = state.empleados.find(e => e.id === state.currentUser.id);
-            if(emp) {
-                const ns = (parseFloat(emp.sales || 0)) + total;
-                await _supabase.from('empleados').update({ sales: ns }).eq('id', emp.id);
-            }
-
-            alert(`Venta finalizada: $${total.toFixed(2)}`);
-            document.getElementById('payment-modal').classList.add('hidden');
-            document.getElementById('order-modal').classList.add('hidden');
-            loadInitialData().then(() => { renderTables(); renderExternalOrders(); });
-        }
-
-        // --- COCINA (EL DESPACHAR SOLO OCULTA) ---
-        function renderKitchen() {
-            const cont = document.getElementById('kitchen-orders');
-            cont.innerHTML = '';
-            const list = [];
-            
-            state.mesas.forEach(m => {
-                if(m.order.length > 0 && !state.kitchenHideList.includes(`mesa-${m.id}`)) {
-                    list.push({title: `MESA ${m.id}`, items: m.order, id: m.id, type: 'mesa', key: `mesa-${m.id}`});
-                }
-            });
-            
-            state.externalOrders.forEach(o => {
-                if(o.order.length > 0 && !state.kitchenHideList.includes(`ext-${o.id}`)) {
-                    list.push({title: o.customer, items: o.order, id: o.id, type: 'ext', address: o.address, key: `ext-${o.id}`});
-                }
-            });
-
-            list.forEach(c => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-5 rounded-2xl shadow-md border-t-8 border-orange-500";
-                div.innerHTML = `
-                    <div class="flex justify-between items-center mb-4"><span class="font-black text-xl">${c.title}</span>
-                    <button onclick='printTicketCocina(${JSON.stringify(c)})' class="text-orange-600"><i data-lucide="printer"></i></button></div>
-                    ${c.address ? `<p class="text-[10px] text-gray-400 font-bold mb-2">${c.address}</p>` : ''}
-                    <div class="space-y-1 mb-4">${c.items.map(i => `<p class="text-sm"><b>1x</b> ${i.name} <span class="text-[10px] opacity-60">(${i.selectedVar})</span></p>`).join('')}</div>
-                    <button onclick="clearComanda('${c.key}')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">DESPACHAR</button>`;
-                cont.appendChild(div);
-            });
-            refreshIcons();
-        }
-
-        function clearComanda(key) {
-            // El despachar solo lo quita de la vista de cocina, pero NO borra la mesa.
-            state.kitchenHideList.push(key);
-            renderKitchen();
-        }
-
-        function printTicketCocina(c) {
-            const p = document.getElementById('print-section');
-            p.innerHTML = `<div style="text-align:center; padding:10px;"><h2 style="margin:0">${c.title}</h2><hr><div style="text-align:left;">${c.items.map(i => `<p>1x ${i.name}<br><small>${i.selectedVar}</small></p>`).join('')}</div></div>`;
-            window.print();
-        }
-
-        // --- LÓGICA DE PEDIDOS EXTERNOS ---
-        function setExternalType(type) {
-            state.currentExternalType = type;
-            document.getElementById('type-dom').className = type === 'domicilio' ? "flex-1 py-2 rounded-lg font-bold text-sm bg-orange-600 text-white" : "flex-1 py-2 rounded-lg font-bold text-sm text-gray-500";
-            document.getElementById('type-pick').className = type === 'pickup' ? "flex-1 py-2 rounded-lg font-bold text-sm bg-orange-600 text-white" : "flex-1 py-2 rounded-lg font-bold text-sm text-gray-500";
-            document.getElementById('div-address').classList.toggle('hidden', type === 'pickup');
-        }
-
-        function createExternalOrder() {
-            const name = document.getElementById('ext-name').value;
-            const phone = document.getElementById('ext-phone').value;
-            const address = document.getElementById('ext-address').value;
-            if(!name || !phone) return alert("Faltan datos");
-            const newOrder = { id: Date.now(), customer: name, phone: phone, address: state.currentExternalType === 'domicilio' ? address : 'PICKUP', type: state.currentExternalType, order: [] };
-            state.externalOrders.push(newOrder);
-            openOrder('ext', newOrder.id);
-            document.getElementById('ext-name').value = ""; document.getElementById('ext-phone').value = ""; document.getElementById('ext-address').value = "";
-        }
-
-        function renderExternalOrders() {
-            const cont = document.getElementById('list-external');
-            cont.innerHTML = state.externalOrders.map(o => `
-                <div class="bg-white p-4 rounded-3xl border shadow-sm flex justify-between items-center">
-                    <div><p class="font-black text-gray-800">${o.customer}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${o.type}</p></div>
-                    <button onclick="openOrder('ext', ${o.id})" class="bg-orange-600 text-white px-6 py-2 rounded-xl text-sm font-bold">Abrir</button>
-                </div>
-            `).join('');
-        }
-
-        // --- ADMINISTRACIÓN ---
-        async function doCorteCaja() {
-            if(!confirm("¿Cerrar turno?")) return;
-            await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false);
-            for(let e of state.empleados) await _supabase.from('empleados').update({ sales: 0 }).eq('id', e.id);
-            state.kitchenHideList = [];
-            alert("Turno cerrado"); location.reload();
-        }
-
-        function updateAdminStats() {
-            let tv = state.history.reduce((a, b) => a + parseFloat(b.total), 0);
-            document.getElementById('total-ventas-dia').innerText = `$${tv.toFixed(2)}`;
-            document.getElementById('total-en-caja').innerText = `$${(tv + state.fondoCaja).toFixed(2)}`;
-        }
-
-        // --- FUNCIONES DE MODAL ---
         function openOrder(type, id) {
             activeTarget = { type, id };
-            const data = type === 'mesa' ? state.mesas.find(x => x.id === id) : state.externalOrders.find(x => x.id === id);
+            const data = type === 'mesa' ? state.mesas.find(x => x.id == id) : state.externalOrders.find(x => x.id == id);
             document.getElementById('order-title').innerText = type === 'mesa' ? `Mesa ${id}` : data.customer;
             document.getElementById('order-modal').classList.remove('hidden');
-            renderMenuSelector(); renderOrderItems(data.order); cancelConfig();
+            renderMenuSelector();
+            renderOrderItems(data.order);
         }
 
         function renderMenuSelector() {
             const cont = document.getElementById('menu-selector');
-            cont.innerHTML = state.menu.map(i => `<div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-xl border cursor-pointer font-bold shadow-sm">${i.name}<br><span class="text-orange-600">$${i.price}</span></div>`).join('');
+            cont.innerHTML = state.menu.map(i => `<div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer font-bold shadow-sm hover:border-orange-500">${i.name}<br><span class="text-orange-600">$${i.price}</span></div>`).join('');
         }
 
         function initItemConfig(item) {
@@ -403,80 +258,225 @@
             document.getElementById('menu-container').classList.add('hidden');
             document.getElementById('product-config').classList.remove('hidden');
             document.getElementById('config-name').innerText = item.name;
-            const r = (s, id) => {
-                const c = document.getElementById(id);
-                if(s) { c.parentElement.classList.remove('hidden'); c.innerHTML = s.split(',').map(v => `<button onclick="selectVar('${id}', '${v.trim()}', this)" class="variant-btn border p-2 rounded-lg font-bold bg-gray-50 text-xs">${v.trim()}</button>`).join(''); }
-                else c.parentElement.classList.add('hidden');
+            
+            const renderVars = (str, containerId) => {
+                const cont = document.getElementById(containerId);
+                if(str) {
+                    cont.parentElement.classList.remove('hidden');
+                    cont.innerHTML = str.split(',').map(v => `<button onclick="selectVar('${containerId}', '${v.trim()}', this)" class="variant-btn border-2 px-4 py-2 rounded-xl text-xs font-bold uppercase">${v.trim()}</button>`).join('');
+                } else {
+                    cont.parentElement.classList.add('hidden');
+                }
             };
-            r(item.varA, 'v1-options'); r(item.varB, 'v2-options');
+            renderVars(item.varA, 'v1-options');
+            renderVars(item.varB, 'v2-options');
         }
 
-        function selectVar(id, val, btn) {
+        function selectVar(contId, val, btn) {
             btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            if(id === 'v1-options') tempItem.v1 = val; else tempItem.v2 = val;
+            if(contId === 'v1-options') tempItem.v1 = val; else tempItem.v2 = val;
         }
 
         async function confirmItem() {
-            const vStr = [tempItem.v1, tempItem.v2].filter(Boolean).join(' / ') || "Normal";
-            const final = { ...tempItem, selectedVar: vStr, note: document.getElementById('config-note').value };
+            const final = { ...tempItem, selectedVar: [tempItem.v1, tempItem.v2].filter(Boolean).join(' / '), note: document.getElementById('config-note').value };
             if(activeTarget.type === 'mesa') {
-                const m = state.mesas.find(x => x.id === activeTarget.id);
+                const m = state.mesas.find(x => x.id == activeTarget.id);
                 m.order.push(final);
-                await _supabase.from('mesas').update({ order: JSON.stringify(m.order), status: 'ocupada' }).eq('id', m.id);
-                // Si estaba en el hideList de cocina, lo sacamos porque hay algo nuevo
-                state.kitchenHideList = state.kitchenHideList.filter(k => k !== `mesa-${m.id}`);
-            } else { 
-                const o = state.externalOrders.find(x => x.id === activeTarget.id);
-                o.order.push(final);
-                state.kitchenHideList = state.kitchenHideList.filter(k => k !== `ext-${o.id}`);
+                await _supabase.from('mesas').update({ order: JSON.stringify(m.order) }).eq('id', m.id);
+            } else {
+                state.externalOrders.find(x => x.id == activeTarget.id).order.push(final);
             }
+            cancelConfig();
             openOrder(activeTarget.type, activeTarget.id);
         }
 
         function renderOrderItems(items) {
             const cont = document.getElementById('order-items');
             let t = 0;
-            cont.innerHTML = items.map(i => { t += parseFloat(i.price); return `<div class="bg-gray-50 p-2 rounded-lg text-xs flex justify-between"><span>${i.name}</span><span>$${i.price}</span></div>`; }).join('');
+            cont.innerHTML = items.map(i => { t += parseFloat(i.price); return `<div class="bg-gray-50 p-3 rounded-xl text-xs flex justify-between border"><div><b>${i.name}</b><br><span class="text-[10px] text-gray-400">${i.selectedVar || ''}</span></div><span class="font-bold">$${i.price}</span></div>`; }).join('');
             document.getElementById('order-total').innerText = `$${t.toFixed(2)}`;
         }
 
-        function renderMenuAdmin() {
-            document.getElementById('table-menu').innerHTML = state.menu.map(i => `<div class="flex justify-between p-3"><span>${i.name} ($${i.price})</span><button onclick="deleteProduct(${i.id})" class="text-red-500"><i data-lucide="trash-2" class="w-4"></i></button></div>`).join(''); refreshIcons();
+        async function finalizeSale(metodo) {
+            let order, total = 0;
+            if(activeTarget.type === 'mesa') {
+                const m = state.mesas.find(x => x.id == activeTarget.id);
+                order = m.order;
+                total = order.reduce((acc, i) => acc + parseFloat(i.price), 0);
+                await _supabase.from('mesas').update({ order: '[]' }).eq('id', m.id);
+            } else {
+                const o = state.externalOrders.find(x => x.id == activeTarget.id);
+                order = o.order;
+                total = order.reduce((acc, i) => acc + parseFloat(i.price), 0);
+                state.externalOrders = state.externalOrders.filter(x => x.id != o.id);
+            }
+            if(total <= 0) return;
+            await _supabase.from('ventas').insert([{ waiter: state.currentUser.name, total, items: JSON.stringify(order), metodo_pago: metodo, archivado: false }]);
+            document.getElementById('payment-modal').classList.add('hidden');
+            document.getElementById('order-modal').classList.add('hidden');
+            alert("¡Venta completada!");
         }
-        function renderEmpsAdmin() {
-            document.getElementById('table-emps').innerHTML = state.empleados.map(e => `<div class="flex justify-between p-3"><span>${e.name}</span><button onclick="deleteEmployee('${e.id}')" class="text-red-500"><i data-lucide="trash-2" class="w-4"></i></button></div>`).join(''); refreshIcons();
-        }
-        function renderMesasAdmin() {
-            document.getElementById('list-mesas-admin').innerHTML = state.mesas.map(m => `<div class="bg-gray-50 p-2 rounded border text-center relative">${m.id}<button onclick="deleteMesa(${m.id})" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-[8px]">X</button></div>`).join('');
+
+        // --- FUNCIÓN ACTUALIZADA: CORTE DE CAJA PDF ---
+        async function doCorteCaja() {
+            if(!confirm("¿Cerrar turno y generar reporte PDF?")) return;
+
+            let totE = 0, totT = 0, itemsMap = {};
+            state.history.forEach(v => {
+                const monto = parseFloat(v.total);
+                if(v.metodo_pago === 'Efectivo') totE += monto; 
+                else totT += monto;
+                
+                const productos = JSON.parse(v.items);
+                productos.forEach(it => {
+                    itemsMap[it.name] = (itemsMap[it.name] || 0) + 1;
+                });
+            });
+
+            const totalGeneral = totE + totT;
+            const fecha = new Date().toLocaleString();
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                unit: 'mm',
+                format: [80, 200]
+            });
+
+            let y = 10;
+            doc.setFontSize(14);
+            doc.text("SABOR POS - REPORTE", 40, y, { align: "center" });
+            
+            y += 10;
+            doc.setFontSize(10);
+            doc.text(`Fecha: ${fecha}`, 10, y);
+            doc.text(`Cajero: ${state.currentUser.name}`, 10, y + 5);
+            
+            y += 15;
+            doc.setFont("helvetica", "bold");
+            doc.text("RESUMEN DE VENTAS", 10, y);
+            doc.line(10, y + 1, 70, y + 1);
+            
+            y += 7;
+            doc.setFont("helvetica", "normal");
+            doc.text(`EFECTIVO:`, 10, y);
+            doc.text(`$${totE.toFixed(2)}`, 70, y, { align: "right" });
+            
+            y += 5;
+            doc.text(`TARJETA:`, 10, y);
+            doc.text(`$${totT.toFixed(2)}`, 70, y, { align: "right" });
+            
+            y += 7;
+            doc.setFont("helvetica", "bold");
+            doc.text(`TOTAL DEL TURNO:`, 10, y);
+            doc.text(`$${totalGeneral.toFixed(2)}`, 70, y, { align: "right" });
+
+            y += 15;
+            doc.text("CONTROL DE PRODUCTOS", 10, y);
+            doc.line(10, y + 1, 70, y + 1);
+            
+            y += 7;
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            for (let [nombre, cantidad] of Object.entries(itemsMap)) {
+                doc.text(`${cantidad}x ${nombre}`, 10, y);
+                y += 5;
+                if (y > 190) { doc.addPage(); y = 10; }
+            }
+
+            y += 10;
+            doc.text("*** FIN DEL REPORTE ***", 40, y, { align: "center" });
+
+            doc.save(`Corte_${new Date().toISOString().slice(0,10)}.pdf`);
+
+            try {
+                await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false);
+                alert("Corte finalizado y PDF descargado.");
+                location.reload();
+            } catch (error) {
+                console.error("Error al archivar:", error);
+            }
         }
 
         async function addProduct() {
-            const n = document.getElementById('p-name').value, p = document.getElementById('p-price').value, vA = document.getElementById('p-varA').value, vB = document.getElementById('p-varB').value;
-            if(!n || !p) return;
-            await _supabase.from('menu').insert([{name: n, price: parseFloat(p), varA: vA, varB: vB}]);
-            loadInitialData().then(renderMenuAdmin);
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const varA = document.getElementById('p-varA').value;
+            const varB = document.getElementById('p-varB').value;
+            if(!name || !price) return;
+            await _supabase.from('menu').insert([{name, price, varA, varB}]);
+            loadInitialData();
         }
-        async function deleteProduct(id) { await _supabase.from('menu').delete().eq('id', id); loadInitialData().then(renderMenuAdmin); }
-        async function addEmployee() {
-            const i = document.getElementById('e-id').value, n = document.getElementById('e-name').value, p = document.getElementById('e-pass').value;
-            if(!i || !n || !p) return;
-            await _supabase.from('empleados').insert([{id: i, name: n, pass: p, sales: 0}]);
-            loadInitialData().then(renderEmpsAdmin);
-        }
-        async function deleteEmployee(id) { await _supabase.from('empleados').delete().eq('id', id); loadInitialData().then(renderEmpsAdmin); }
+
         async function addMesa() {
-            const n = document.getElementById('m-number').value; if(!n) return;
-            await _supabase.from('mesas').insert([{id: n, status: 'libre', order: '[]'}]);
-            loadInitialData().then(() => { renderTables(); renderMesasAdmin(); });
+            const id = document.getElementById('m-number').value;
+            if(!id) return;
+            await _supabase.from('mesas').insert([{id, order: '[]'}]);
+            loadInitialData();
         }
-        async function deleteMesa(id) { await _supabase.from('mesas').delete().eq('id', id); loadInitialData().then(() => { renderTables(); renderMesasAdmin(); }); }
+
+        async function addEmployee() {
+            const name = document.getElementById('e-name').value;
+            const pass = document.getElementById('e-pass').value;
+            if(!name || !pass) return;
+            await _supabase.from('empleados').insert([{name, pass}]);
+            loadInitialData();
+        }
+
+        function renderAdminLists() {
+            document.getElementById('admin-menu-list').innerHTML = state.menu.map(i => `<div class="p-2 border-b flex justify-between text-xs"><span>${i.name} ($${i.price})</span><button onclick="delP(${i.id})" class="text-red-500 font-bold">Quitar</button></div>`).join('');
+            document.getElementById('admin-mesas-list').innerHTML = state.mesas.map(m => `<div class="bg-gray-100 p-2 rounded-lg flex gap-2"><span>Mesa ${m.id}</span><button onclick="delM(${m.id})" class="text-red-500 font-bold">×</button></div>`).join('');
+            document.getElementById('admin-emps-list').innerHTML = state.employees.map(e => `<div class="p-2 border-b flex justify-between text-xs"><span>${e.name}</span><button onclick="delE(${e.id})" class="text-red-500">Eliminar</button></div>`).join('');
+        }
+
+        async function delP(id) { await _supabase.from('menu').delete().eq('id', id); loadInitialData(); }
+        async function delM(id) { await _supabase.from('mesas').delete().eq('id', id); loadInitialData(); }
+        async function delE(id) { await _supabase.from('empleados').delete().eq('id', id); loadInitialData(); }
+
+        function renderKitchen() {
+            const cont = document.getElementById('kitchen-orders');
+            cont.innerHTML = '';
+            state.mesas.filter(m => m.order.length > 0 && !state.kitchenHide.includes('m'+m.id)).forEach(m => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-5 rounded-3xl border-t-8 border-orange-500 shadow-md";
+                div.innerHTML = `<h4 class="font-black text-xl mb-4 uppercase">Mesa ${m.id}</h4><div class="space-y-1 mb-4 text-sm">${m.order.map(i => `• <b>1x</b> ${i.name} <small class="text-gray-400">(${i.selectedVar})</small>`).join('<br>')}</div><button onclick="state.kitchenHide.push('m${m.id}'); renderKitchen();" class="w-full bg-green-600 text-white py-3 rounded-2xl font-bold">MARCAR LISTO</button>`;
+                cont.appendChild(div);
+            });
+        }
+
+        function createExternalOrder() {
+            const name = document.getElementById('ext-name').value;
+            if(!name) return;
+            const o = { id: Date.now(), customer: name, address: document.getElementById('ext-address').value, order: [] };
+            state.externalOrders.push(o);
+            openOrder('ext', o.id);
+        }
+
+        function renderExternalOrders() {
+            document.getElementById('list-external').innerHTML = state.externalOrders.map(o => `
+                <div class="bg-white p-5 rounded-3xl border shadow-sm flex justify-between items-center">
+                    <div><p class="font-bold text-lg">${o.customer}</p><p class="text-xs text-gray-400">${o.address || 'Pickup'}</p></div>
+                    <button onclick="openOrder('ext', ${o.id})" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ver Ticket</button>
+                </div>`).join('');
+        }
+
+        function showTab(t) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-'+t).classList.add('active');
+            refreshIcons();
+        }
+
+        function updateAdminStats() {
+            let t = state.history.reduce((a, b) => a + parseFloat(b.total), 0);
+            let e = state.history.filter(v => v.metodo_pago === 'Efectivo').reduce((a, b) => a + parseFloat(b.total), 0);
+            document.getElementById('total-ventas-dia').innerText = `$${t.toFixed(2)}`;
+            document.getElementById('total-efectivo').innerText = `$${e.toFixed(2)}`;
+        }
 
         function cancelConfig() { document.getElementById('product-config').classList.add('hidden'); document.getElementById('menu-container').classList.remove('hidden'); }
-        function closeOrderModal() { document.getElementById('order-modal').classList.add('hidden'); renderTables(); renderExternalOrders(); }
+        function closeOrderModal() { document.getElementById('order-modal').classList.add('hidden'); }
         function openPayment() { document.getElementById('payment-modal').classList.remove('hidden'); }
-        function updateFondoCaja() { localStorage.setItem('fondoCaja', document.getElementById('cash-fondo').value); loadInitialData(); }
-        function sendKitchenSignal() { alert("Orden enviada"); closeOrderModal(); }
+        function sendKitchenSignal() { alert("Pedido enviado"); closeOrderModal(); }
         async function checkAdminAccess() { if(state.isAdmin) showTab('admin'); else { if(prompt("PIN Admin:") === "1234") { state.isAdmin = true; showTab('admin'); } } }
 
         window.onload = loadInitialData;
