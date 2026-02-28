@@ -72,7 +72,6 @@
 
             <div id="tab-admin" class="tab-content">
                 <h2 class="text-3xl font-black mb-6">Panel de Control</h2>
-                
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-3xl border shadow-sm">
                         <p class="text-xs font-bold text-gray-400">VENTAS HOY</p>
@@ -99,7 +98,6 @@
                         </div>
                         <div id="admin-menu-list" class="mt-6 space-y-2 max-h-60 overflow-y-auto"></div>
                     </div>
-
                     <div class="space-y-8">
                         <div class="bg-white p-6 rounded-3xl border">
                             <h4 class="font-bold mb-4">Mesas</h4>
@@ -134,18 +132,20 @@
                 <div id="menu-container" class="flex-1 p-6 overflow-y-auto bg-gray-50">
                     <div id="menu-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
                 </div>
-                <div id="product-config" class="hidden flex-1 p-6 flex flex-col">
-                    <h4 id="config-name" class="text-2xl font-bold mb-6"></h4>
-                    <div class="space-y-6 flex-1">
+                <div id="product-config" class="hidden flex-1 p-6 flex flex-col bg-white">
+                    <h4 id="config-name" class="text-2xl font-bold mb-4"></h4>
+                    <div class="space-y-4 flex-1 overflow-y-auto">
                         <div id="v1-container">
-                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Opción A</label>
+                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Opciones</label>
                             <div id="v1-options" class="flex flex-wrap gap-2"></div>
                         </div>
                         <div id="v2-container">
-                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Opción B</label>
+                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Complementos</label>
                             <div id="v2-options" class="flex flex-wrap gap-2"></div>
                         </div>
-                        <textarea id="config-note" class="w-full p-4 border rounded-2xl h-24" placeholder="Notas..."></textarea>
+                        <div id="extra-charge-container" class="mt-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
+                            </div>
+                        <textarea id="config-note" class="w-full p-4 border rounded-2xl h-20" placeholder="Notas..."></textarea>
                     </div>
                     <div class="flex gap-4 mt-6">
                         <button onclick="cancelConfig()" class="flex-1 p-4 bg-gray-200 rounded-2xl font-bold">Atrás</button>
@@ -156,8 +156,8 @@
                     <div id="order-items" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
                     <div class="border-t pt-4">
                         <div class="flex justify-between font-black text-2xl mb-4"><span>TOTAL</span><span id="order-total">$0.00</span></div>
-                        <button onclick="sendKitchenSignal()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold mb-2">ORDENAR</button>
-                        <button onclick="openPayment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold">COBRAR</button>
+                        <button onclick="sendKitchenSignal()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold mb-2 uppercase">Enviar Comanda</button>
+                        <button onclick="openPayment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold uppercase">Cobrar Cuenta</button>
                     </div>
                 </div>
             </div>
@@ -183,6 +183,8 @@
         let state = { currentUser: null, isAdmin: false, menu: [], mesas: [], history: [], externalOrders: [], employees: [], kitchenHide: [] };
         let activeTarget = { type: null, id: null };
         let tempItem = null;
+        let selectedVariants = [];
+        let extraChargeApplied = true;
 
         const refreshIcons = () => lucide.createIcons();
 
@@ -223,7 +225,7 @@
                 document.getElementById('main-app').classList.remove('hidden');
                 setupRealtime();
                 refreshIcons();
-            } else { alert("Error de acceso"); }
+            } else { alert("Acceso denegado"); }
         }
 
         function renderTables() {
@@ -250,36 +252,83 @@
 
         function renderMenuSelector() {
             const cont = document.getElementById('menu-selector');
-            cont.innerHTML = state.menu.map(i => `<div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer font-bold shadow-sm hover:border-orange-500">${i.name}<br><span class="text-orange-600">$${i.price}</span></div>`).join('');
+            cont.innerHTML = state.menu.map(i => `<div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer font-bold shadow-sm hover:border-orange-500 h-24 flex flex-col justify-center">${i.name}<br><span class="text-orange-600">$${i.price}</span></div>`).join('');
         }
 
+        // LÓGICA DE VARIANTES ACTUALIZADA
         function initItemConfig(item) {
-            tempItem = { ...item, v1: null, v2: null };
+            tempItem = { ...item };
+            selectedVariants = [];
+            extraChargeApplied = true;
+            
             document.getElementById('menu-container').classList.add('hidden');
             document.getElementById('product-config').classList.remove('hidden');
             document.getElementById('config-name').innerText = item.name;
+            document.getElementById('config-note').value = "";
             
             const renderVars = (str, containerId) => {
                 const cont = document.getElementById(containerId);
                 if(str) {
                     cont.parentElement.classList.remove('hidden');
-                    cont.innerHTML = str.split(',').map(v => `<button onclick="selectVar('${containerId}', '${v.trim()}', this)" class="variant-btn border-2 px-4 py-2 rounded-xl text-xs font-bold uppercase">${v.trim()}</button>`).join('');
+                    cont.innerHTML = str.split(',').map(v => `<button onclick="toggleVar('${v.trim()}', this)" class="variant-btn border-2 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-colors">${v.trim()}</button>`).join('');
                 } else {
                     cont.parentElement.classList.add('hidden');
                 }
             };
             renderVars(item.varA, 'v1-options');
             renderVars(item.varB, 'v2-options');
+            updateExtraChargeUI();
         }
 
-        function selectVar(contId, val, btn) {
-            btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if(contId === 'v1-options') tempItem.v1 = val; else tempItem.v2 = val;
+        function toggleVar(val, btn) {
+            const index = selectedVariants.indexOf(val);
+            if (index > -1) {
+                selectedVariants.splice(index, 1);
+                btn.classList.remove('active');
+            } else {
+                if (selectedVariants.length < 4) {
+                    selectedVariants.push(val);
+                    btn.classList.add('active');
+                } else { alert("Máximo 4 variantes"); }
+            }
+            updateExtraChargeUI();
+        }
+
+        function updateExtraChargeUI() {
+            const cont = document.getElementById('extra-charge-container');
+            const extraCount = Math.max(0, selectedVariants.length - 2);
+            const extraCost = extraChargeApplied ? (extraCount * 10) : 0;
+            
+            cont.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-orange-800">Cargo por Guisos Extra: $${extraCost}</p>
+                        <p class="text-[10px] text-orange-600">${selectedVariants.length}/4 seleccionados (Gratis: 2)</p>
+                    </div>
+                    <button onclick="toggleExtraCharge()" class="px-4 py-2 rounded-xl text-xs font-black ${extraChargeApplied ? 'bg-white text-red-500' : 'bg-orange-600 text-white'}">
+                        ${extraChargeApplied ? 'QUITAR CARGO' : 'APLICAR CARGO'}
+                    </button>
+                </div>
+            `;
+        }
+
+        function toggleExtraCharge() {
+            extraChargeApplied = !extraChargeApplied;
+            updateExtraChargeUI();
         }
 
         async function confirmItem() {
-            const final = { ...tempItem, selectedVar: [tempItem.v1, tempItem.v2].filter(Boolean).join(' / '), note: document.getElementById('config-note').value };
+            const extraCount = Math.max(0, selectedVariants.length - 2);
+            const extraCost = extraChargeApplied ? (extraCount * 10) : 0;
+            
+            const final = { 
+                ...tempItem, 
+                price: parseFloat(tempItem.price) + extraCost,
+                selectedVar: selectedVariants.join(', '), 
+                note: document.getElementById('config-note').value,
+                isNew: true 
+            };
+
             if(activeTarget.type === 'mesa') {
                 const m = state.mesas.find(x => x.id == activeTarget.id);
                 m.order.push(final);
@@ -294,8 +343,27 @@
         function renderOrderItems(items) {
             const cont = document.getElementById('order-items');
             let t = 0;
-            cont.innerHTML = items.map(i => { t += parseFloat(i.price); return `<div class="bg-gray-50 p-3 rounded-xl text-xs flex justify-between border"><div><b>${i.name}</b><br><span class="text-[10px] text-gray-400">${i.selectedVar || ''}</span></div><span class="font-bold">$${i.price}</span></div>`; }).join('');
+            cont.innerHTML = items.map(i => { 
+                t += parseFloat(i.price); 
+                return `<div class="bg-gray-50 p-3 rounded-xl text-xs flex justify-between border ${i.isNew ? 'border-orange-200' : ''}">
+                    <div><b>${i.name}</b><br><span class="text-[10px] text-gray-400">${i.selectedVar || 'Sin variantes'}</span></div>
+                    <span class="font-bold">$${i.price}</span>
+                </div>`; 
+            }).join('');
             document.getElementById('order-total').innerText = `$${t.toFixed(2)}`;
+        }
+
+        async function sendKitchenSignal() {
+            if(activeTarget.type === 'mesa') {
+                const m = state.mesas.find(x => x.id == activeTarget.id);
+                // Aseguramos que se vea en cocina quitándola del historial de ocultos
+                state.kitchenHide = state.kitchenHide.filter(id => id !== 'm'+m.id);
+                m.order = m.order.map(i => ({...i, isNew: false}));
+                await _supabase.from('mesas').update({ order: JSON.stringify(m.order) }).eq('id', m.id);
+            }
+            alert("Pedido enviado a cocina");
+            closeOrderModal();
+            renderKitchen();
         }
 
         async function finalizeSale(metodo) {
@@ -312,90 +380,84 @@
                 state.externalOrders = state.externalOrders.filter(x => x.id != o.id);
             }
             if(total <= 0) return;
-            await _supabase.from('ventas').insert([{ waiter: state.currentUser.name, total, items: JSON.stringify(order), metodo_pago: metodo, archivado: false }]);
+            await _supabase.from('ventas').insert([{ 
+                waiter: state.currentUser.name, 
+                total, 
+                items: JSON.stringify(order), 
+                metodo_pago: metodo, 
+                archivado: false,
+                created_at: new Date().toISOString()
+            }]);
             document.getElementById('payment-modal').classList.add('hidden');
             document.getElementById('order-modal').classList.add('hidden');
-            alert("¡Venta completada!");
+            alert("Venta completada");
         }
 
-        // --- FUNCIÓN ACTUALIZADA: CORTE DE CAJA PDF ---
+        // REPORTE DE CORTE DETALLADO
         async function doCorteCaja() {
-            if(!confirm("¿Cerrar turno y generar reporte PDF?")) return;
+            if(!confirm("¿Desea cerrar el turno y generar el reporte detallado?")) return;
 
             let totE = 0, totT = 0, itemsMap = {};
+            let movimientos = [];
+
             state.history.forEach(v => {
                 const monto = parseFloat(v.total);
-                if(v.metodo_pago === 'Efectivo') totE += monto; 
-                else totT += monto;
+                if(v.metodo_pago === 'Efectivo') totE += monto; else totT += monto;
                 
                 const productos = JSON.parse(v.items);
+                movimientos.push({
+                    hora: new Date(v.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    total: monto,
+                    metodo: v.metodo_pago,
+                    mesero: v.waiter
+                });
+
                 productos.forEach(it => {
                     itemsMap[it.name] = (itemsMap[it.name] || 0) + 1;
                 });
             });
 
-            const totalGeneral = totE + totT;
-            const fecha = new Date().toLocaleString();
-
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                unit: 'mm',
-                format: [80, 200]
+            const doc = new jsPDF({ unit: 'mm', format: [80, 250] });
+            let y = 10;
+
+            doc.setFontSize(14).text("SABOR POS - CORTE", 40, y, { align: "center" });
+            y += 8;
+            doc.setFontSize(8).text(`Fecha: ${new Date().toLocaleString()}`, 10, y);
+            y += 4;
+            doc.text(`Cajero: ${state.currentUser.name}`, 10, y);
+            
+            y += 8;
+            doc.setFont(undefined, 'bold').text("RESUMEN DE VENTAS", 10, y);
+            y += 4;
+            doc.setFont(undefined, 'normal').text(`Efectivo: $${totE.toFixed(2)}`, 10, y);
+            y += 4;
+            doc.text(`Tarjeta:  $${totT.toFixed(2)}`, 10, y);
+            y += 6;
+            doc.setFontSize(10).setFont(undefined, 'bold').text(`TOTAL TURNO: $${(totE + totT).toFixed(2)}`, 10, y);
+            
+            y += 10;
+            doc.setFontSize(8).text("HISTORIAL DE MOVIMIENTOS", 10, y);
+            y += 4;
+            doc.setFontSize(6).setFont(undefined, 'normal');
+            movimientos.forEach(m => {
+                doc.text(`${m.hora} | ${m.metodo.charAt(0)} | $${m.total.toFixed(2)} | ${m.mesero}`, 10, y);
+                y += 4;
+                if(y > 230) { doc.addPage(); y = 10; }
             });
 
-            let y = 10;
-            doc.setFontSize(14);
-            doc.text("SABOR POS - REPORTE", 40, y, { align: "center" });
-            
-            y += 10;
-            doc.setFontSize(10);
-            doc.text(`Fecha: ${fecha}`, 10, y);
-            doc.text(`Cajero: ${state.currentUser.name}`, 10, y + 5);
-            
-            y += 15;
-            doc.setFont("helvetica", "bold");
-            doc.text("RESUMEN DE VENTAS", 10, y);
-            doc.line(10, y + 1, 70, y + 1);
-            
-            y += 7;
-            doc.setFont("helvetica", "normal");
-            doc.text(`EFECTIVO:`, 10, y);
-            doc.text(`$${totE.toFixed(2)}`, 70, y, { align: "right" });
-            
-            y += 5;
-            doc.text(`TARJETA:`, 10, y);
-            doc.text(`$${totT.toFixed(2)}`, 70, y, { align: "right" });
-            
-            y += 7;
-            doc.setFont("helvetica", "bold");
-            doc.text(`TOTAL DEL TURNO:`, 10, y);
-            doc.text(`$${totalGeneral.toFixed(2)}`, 70, y, { align: "right" });
-
-            y += 15;
-            doc.text("CONTROL DE PRODUCTOS", 10, y);
-            doc.line(10, y + 1, 70, y + 1);
-            
-            y += 7;
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(9);
-            for (let [nombre, cantidad] of Object.entries(itemsMap)) {
-                doc.text(`${cantidad}x ${nombre}`, 10, y);
-                y += 5;
-                if (y > 190) { doc.addPage(); y = 10; }
+            y += 6;
+            doc.setFontSize(8).setFont(undefined, 'bold').text("CONTROL DE PRODUCTOS", 10, y);
+            y += 4;
+            doc.setFontSize(7).setFont(undefined, 'normal');
+            for (let [nombre, cant] of Object.entries(itemsMap)) {
+                doc.text(`${cant}x ${nombre}`, 10, y);
+                y += 4;
             }
-
-            y += 10;
-            doc.text("*** FIN DEL REPORTE ***", 40, y, { align: "center" });
 
             doc.save(`Corte_${new Date().toISOString().slice(0,10)}.pdf`);
-
-            try {
-                await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false);
-                alert("Corte finalizado y PDF descargado.");
-                location.reload();
-            } catch (error) {
-                console.error("Error al archivar:", error);
-            }
+            await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false);
+            location.reload();
         }
 
         async function addProduct() {
@@ -476,7 +538,6 @@
         function cancelConfig() { document.getElementById('product-config').classList.add('hidden'); document.getElementById('menu-container').classList.remove('hidden'); }
         function closeOrderModal() { document.getElementById('order-modal').classList.add('hidden'); }
         function openPayment() { document.getElementById('payment-modal').classList.remove('hidden'); }
-        function sendKitchenSignal() { alert("Pedido enviado"); closeOrderModal(); }
         async function checkAdminAccess() { if(state.isAdmin) showTab('admin'); else { if(prompt("PIN Admin:") === "1234") { state.isAdmin = true; showTab('admin'); } } }
 
         window.onload = loadInitialData;
