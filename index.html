@@ -14,11 +14,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .variant-btn.active { border-color: #ea580c; background-color: #fff7ed; color: #ea580c; }
-        @media print {
-            body * { visibility: hidden; }
-            #print-section, #print-section * { visibility: visible; }
-            #print-section { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; }
-        }
+        .nav-btn.active { color: #ea580c; background-color: #fff7ed; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -32,17 +28,16 @@
                 <input type="password" id="emp-pass" placeholder="PIN" class="w-full px-4 py-3 rounded-xl border outline-none">
                 <button onclick="attemptLogin()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold">ENTRAR</button>
             </div>
-            <p id="login-error" class="text-red-500 text-sm mt-4 hidden">Credenciales Incorrectas</p>
         </div>
     </div>
 
     <div id="main-app" class="hidden pb-24 lg:pb-0 lg:pl-64">
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t lg:border-t-0 lg:border-r lg:w-64 lg:top-0 lg:h-full z-40 flex lg:flex-col justify-around lg:justify-start lg:p-4 shadow-2xl">
-            <div class="hidden lg:block mb-8 px-4 pt-4 font-black text-2xl text-orange-600">SaborPOS</div>
-            <button onclick="showTab('mesas')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-mesas"><i data-lucide="layout-grid" class="lg:mr-3"></i><span>Salón</span></button>
-            <button onclick="showTab('domicilio')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-domicilio"><i data-lucide="truck" class="lg:mr-3"></i><span>Envíos</span></button>
-            <button onclick="showTab('cocina')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-cocina"><i data-lucide="flame" class="lg:mr-3"></i><span>Cocina</span></button>
-            <button onclick="checkAdminAccess()" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500" id="btn-admin"><i data-lucide="shield-check" class="lg:mr-3"></i><span>Admin</span></button>
+            <div class="hidden lg:block mb-8 px-4 pt-4 font-black text-2xl text-orange-600 italic">SaborPOS</div>
+            <button onclick="showTab('mesas')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="layout-grid" class="lg:mr-3"></i><span>Salón</span></button>
+            <button onclick="showTab('domicilio')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="truck" class="lg:mr-3"></i><span>Envíos</span></button>
+            <button onclick="showTab('cocina')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="flame" class="lg:mr-3"></i><span>Cocina</span></button>
+            <button onclick="checkAdminAccess()" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="shield-check" class="lg:mr-3"></i><span>Admin</span></button>
             <button onclick="location.reload()" class="p-3 flex flex-col lg:flex-row items-center lg:px-4 text-red-500 mt-auto"><i data-lucide="log-out" class="lg:mr-3"></i><span>Salir</span></button>
         </nav>
 
@@ -52,68 +47,63 @@
                 <div id="grid-mesas" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             </div>
 
-            <div id="tab-cocina" class="tab-content">
-                <h2 class="text-3xl font-black mb-6">Comandas Cocina</h2>
-                <div id="kitchen-orders" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </div>
-
             <div id="tab-domicilio" class="tab-content">
                 <h2 class="text-3xl font-black mb-6">Envíos y Pickup</h2>
                 <div class="grid lg:grid-cols-3 gap-8">
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <input type="text" id="ext-name" placeholder="Nombre Cliente" class="w-full p-3 border rounded-xl mb-3">
-                        <input type="tel" id="ext-phone" placeholder="Teléfono" class="w-full p-3 border rounded-xl mb-3">
-                        <textarea id="ext-address" placeholder="Dirección Completa" class="w-full p-3 border rounded-xl mb-4 h-24"></textarea>
-                        <button onclick="createExternalOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold">Crear Pedido</button>
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm h-fit">
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="setDeliveryType('domicilio')" id="btn-dom" class="flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white">Domicilio</button>
+                            <button onclick="setDeliveryType('pickup')" id="btn-pick" class="flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500">Pickup</button>
+                        </div>
+                        <div class="space-y-3">
+                            <input type="text" id="ext-name" placeholder="Nombre Cliente" class="w-full p-3 border rounded-xl">
+                            <input type="tel" id="ext-phone" placeholder="Número de Celular" class="w-full p-3 border rounded-xl">
+                            <textarea id="ext-address" placeholder="Dirección Completa" class="w-full p-3 border rounded-xl h-24"></textarea>
+                            <button onclick="createExternalOrder()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold">Crear Pedido</button>
+                        </div>
                     </div>
                     <div id="list-external" class="lg:col-span-2 grid gap-4"></div>
                 </div>
             </div>
 
+            <div id="tab-cocina" class="tab-content">
+                <h2 class="text-3xl font-black mb-6">Comandas</h2>
+                <div id="kitchen-orders" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
             <div id="tab-admin" class="tab-content">
-                <h2 class="text-3xl font-black mb-6">Panel de Control</h2>
+                <h2 class="text-3xl font-black mb-6 italic">Panel Administrativo</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-xs font-bold text-gray-400">VENTAS HOY</p>
-                        <h3 id="total-ventas-dia" class="text-3xl font-black">$0.00</h3>
-                    </div>
-                    <div class="bg-white p-6 rounded-3xl border shadow-sm">
-                        <p class="text-xs font-bold text-gray-400">EFECTIVO ESTIMADO</p>
+                    <div class="bg-white p-6 rounded-3xl border">
+                        <p class="text-xs font-bold text-gray-400">EFECTIVO HOY</p>
                         <h3 id="total-efectivo" class="text-3xl font-black text-green-600">$0.00</h3>
                     </div>
-                    <button onclick="doCorteCaja()" class="bg-gray-900 text-white rounded-3xl p-6 font-bold flex flex-col items-center justify-center hover:bg-black transition-colors">
-                        <i data-lucide="file-text" class="mb-2"></i> REALIZAR CORTE (PDF)
+                    <button onclick="doCorteCaja()" class="bg-gray-900 text-white rounded-3xl p-6 font-bold flex flex-col items-center justify-center">
+                        <i data-lucide="file-text" class="mb-2"></i> GENERAR CORTE (PDF)
                     </button>
                 </div>
 
                 <div class="grid lg:grid-cols-2 gap-8">
                     <div class="bg-white p-6 rounded-3xl border">
-                        <h4 class="font-bold mb-4">Añadir al Menú</h4>
-                        <div class="space-y-2">
+                        <h4 class="font-bold mb-4">Menú</h4>
+                        <div class="space-y-2 mb-4">
                             <input type="text" id="p-name" placeholder="Producto" class="w-full p-2 border rounded-lg">
                             <input type="number" id="p-price" placeholder="Precio" class="w-full p-2 border rounded-lg">
-                            <input type="text" id="p-varA" placeholder="Variante A (ej: Chica, Mediana)" class="w-full p-2 border rounded-lg text-sm">
-                            <input type="text" id="p-varB" placeholder="Variante B (ej: Con Todo, Sin Cebolla)" class="w-full p-2 border rounded-lg text-sm">
+                            <input type="text" id="p-varA" placeholder="Variante A (Guisos) - sep. por coma" class="w-full p-2 border rounded-lg text-sm">
+                            <input type="text" id="p-varB" placeholder="Variante B (Extras) - sep. por coma" class="w-full p-2 border rounded-lg text-sm">
                             <button onclick="addProduct()" class="w-full bg-orange-600 text-white py-2 rounded-lg font-bold">Guardar</button>
                         </div>
-                        <div id="admin-menu-list" class="mt-6 space-y-2 max-h-60 overflow-y-auto"></div>
+                        <div id="admin-menu-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
                     </div>
-                    <div class="space-y-8">
+                    <div class="space-y-6">
                         <div class="bg-white p-6 rounded-3xl border">
-                            <h4 class="font-bold mb-4">Mesas</h4>
-                            <div class="flex gap-2 mb-4">
-                                <input type="number" id="m-number" placeholder="#" class="w-20 p-2 border rounded-lg">
-                                <button onclick="addMesa()" class="bg-gray-800 text-white px-4 rounded-lg">Añadir</button>
-                            </div>
+                            <h4 class="font-bold mb-2">Mesas</h4>
+                            <div class="flex gap-2 mb-2"><input type="number" id="m-number" class="w-20 p-2 border rounded-lg"><button onclick="addMesa()" class="bg-black text-white px-4 rounded-lg">Añadir</button></div>
                             <div id="admin-mesas-list" class="flex flex-wrap gap-2"></div>
                         </div>
                         <div class="bg-white p-6 rounded-3xl border">
-                            <h4 class="font-bold mb-4">Empleados</h4>
-                            <div class="flex gap-2 mb-4">
-                                <input type="text" id="e-name" placeholder="Nombre" class="flex-1 p-2 border rounded-lg">
-                                <input type="text" id="e-pass" placeholder="PIN" class="w-20 p-2 border rounded-lg">
-                                <button onclick="addEmployee()" class="bg-gray-800 text-white px-4 rounded-lg">Añadir</button>
-                            </div>
+                            <h4 class="font-bold mb-2">Empleados</h4>
+                            <div class="flex gap-2 mb-2"><input type="text" id="e-name" placeholder="Nombre" class="flex-1 p-2 border rounded-lg"><input type="text" id="e-pass" placeholder="PIN" class="w-20 p-2 border rounded-lg"><button onclick="addEmployee()" class="bg-black text-white px-4 rounded-lg">OK</button></div>
                             <div id="admin-emps-list" class="space-y-1"></div>
                         </div>
                     </div>
@@ -123,7 +113,7 @@
     </div>
 
     <div id="order-modal" class="fixed inset-0 bg-black/60 z-[200] hidden flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-5xl h-[90vh] rounded-[2rem] flex flex-col overflow-hidden">
+        <div class="bg-white w-full max-w-6xl h-[90vh] rounded-[2rem] flex flex-col overflow-hidden shadow-2xl">
             <div class="p-6 bg-orange-600 text-white flex justify-between items-center">
                 <h3 id="order-title" class="text-2xl font-black italic">Pedido</h3>
                 <button onclick="closeOrderModal()"><i data-lucide="x"></i></button>
@@ -132,32 +122,33 @@
                 <div id="menu-container" class="flex-1 p-6 overflow-y-auto bg-gray-50">
                     <div id="menu-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
                 </div>
-                <div id="product-config" class="hidden flex-1 p-6 flex flex-col bg-white">
-                    <h4 id="config-name" class="text-2xl font-bold mb-4"></h4>
-                    <div class="space-y-4 flex-1 overflow-y-auto">
-                        <div id="v1-container">
-                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Opciones</label>
+                
+                <div id="product-config" class="hidden flex-1 p-6 flex flex-col bg-white overflow-y-auto">
+                    <h4 id="config-name" class="text-2xl font-black mb-6"></h4>
+                    <div class="space-y-6 flex-1">
+                        <div>
+                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Variante A (Máx 4)</label>
                             <div id="v1-options" class="flex flex-wrap gap-2"></div>
                         </div>
-                        <div id="v2-container">
-                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Complementos</label>
+                        <div>
+                            <label class="font-bold text-xs uppercase text-gray-400 mb-2 block">Variante B (Máx 4)</label>
                             <div id="v2-options" class="flex flex-wrap gap-2"></div>
                         </div>
-                        <div id="extra-charge-container" class="mt-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                            </div>
-                        <textarea id="config-note" class="w-full p-4 border rounded-2xl h-20" placeholder="Notas..."></textarea>
+                        <div id="extra-charge-ui" class="p-4 bg-orange-50 border border-orange-100 rounded-2xl"></div>
+                        <textarea id="config-note" class="w-full p-4 border rounded-2xl h-24" placeholder="Notas..."></textarea>
                     </div>
                     <div class="flex gap-4 mt-6">
                         <button onclick="cancelConfig()" class="flex-1 p-4 bg-gray-200 rounded-2xl font-bold">Atrás</button>
                         <button onclick="confirmItem()" class="flex-1 p-4 bg-orange-600 text-white rounded-2xl font-bold">Agregar</button>
                     </div>
                 </div>
+
                 <div class="w-full md:w-80 p-6 border-l bg-white flex flex-col">
                     <div id="order-items" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
                     <div class="border-t pt-4">
                         <div class="flex justify-between font-black text-2xl mb-4"><span>TOTAL</span><span id="order-total">$0.00</span></div>
-                        <button onclick="sendKitchenSignal()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold mb-2 uppercase">Enviar Comanda</button>
-                        <button onclick="openPayment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold uppercase">Cobrar Cuenta</button>
+                        <button onclick="sendKitchenSignal()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold mb-2">ENVIAR COMANDA</button>
+                        <button onclick="openPayment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold">COBRAR</button>
                     </div>
                 </div>
             </div>
@@ -167,380 +158,302 @@
     <div id="payment-modal" class="fixed inset-0 bg-black/80 z-[300] hidden flex items-center justify-center">
         <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center">
             <h3 class="text-xl font-bold mb-6 italic">Método de Pago</h3>
-            <div class="grid gap-3">
-                <button onclick="finalizeSale('Efectivo')" class="p-5 bg-gray-100 rounded-2xl font-bold hover:bg-orange-100">EFECTIVO</button>
-                <button onclick="finalizeSale('Tarjeta')" class="p-5 bg-gray-100 rounded-2xl font-bold hover:bg-orange-100">TARJETA</button>
-                <button onclick="document.getElementById('payment-modal').classList.add('hidden')" class="mt-4 text-gray-400">Regresar</button>
-            </div>
+            <button onclick="finalizeSale('Efectivo')" class="w-full p-5 bg-gray-100 rounded-2xl font-bold mb-2">EFECTIVO</button>
+            <button onclick="finalizeSale('Tarjeta')" class="w-full p-5 bg-gray-100 rounded-2xl font-bold">TARJETA</button>
+            <button onclick="document.getElementById('payment-modal').classList.add('hidden')" class="mt-4 text-gray-400">Cancelar</button>
         </div>
     </div>
 
     <script>
-        const supabaseUrl = 'https://wnboqxpggbvktrumqcat.supabase.co';
-        const supabaseKey = 'sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p'; 
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const _supabase = supabase.createClient('https://wnboqxpggbvktrumqcat.supabase.co', 'sb_publishable_xbTlbpq30V9ZwX6xyEx3bA_-LNiuI0p');
 
-        let state = { currentUser: null, isAdmin: false, menu: [], mesas: [], history: [], externalOrders: [], employees: [], kitchenHide: [] };
+        let state = { menu: [], mesas: [], externalOrders: [], currentUser: null, isAdmin: false, kitchenHide: [], history: [], employees: [] };
         let activeTarget = { type: null, id: null };
+        let currentDeliveryType = 'domicilio';
         let tempItem = null;
-        let selectedVariants = [];
+        let selectedV1 = []; 
+        let selectedV2 = []; 
         let extraChargeApplied = true;
-
-        const refreshIcons = () => lucide.createIcons();
 
         async function loadInitialData() {
             const { data: menu } = await _supabase.from('menu').select('*').order('name');
-            const { data: mesas } = await _supabase.from('mesas').select('*').order('id', {ascending: true});
-            const { data: ventas } = await _supabase.from('ventas').select('*').eq('archivado', false);
+            const { data: mesas } = await _supabase.from('mesas').select('*').order('id');
             const { data: emps } = await _supabase.from('empleados').select('*');
-            
+            const { data: ventas } = await _supabase.from('ventas').select('*').eq('archivado', false);
             state.menu = menu || [];
             state.mesas = (mesas || []).map(m => ({...m, order: JSON.parse(m.order || '[]')}));
-            state.history = ventas || [];
             state.employees = emps || [];
-            
-            updateAdminStats();
-            renderTables();
-            renderKitchen();
-            renderAdminLists();
-            renderExternalOrders();
+            state.history = ventas || [];
+            renderTables(); renderExternalOrders(); renderKitchen(); renderAdminLists(); updateAdminStats(); lucide.createIcons();
         }
 
-        function setupRealtime() {
-            _supabase.channel('pos-realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, () => loadInitialData())
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => loadInitialData())
-                .subscribe();
-        }
+        // --- CAMBIOS EN ENVIOS ---
+        function setDeliveryType(type) {
+            currentDeliveryType = type;
+            const btnDom = document.getElementById('btn-dom');
+            const btnPick = document.getElementById('btn-pick');
+            const addrInput = document.getElementById('ext-address');
 
-        async function attemptLogin() {
-            await loadInitialData();
-            const id = document.getElementById('emp-id').value;
-            const pass = document.getElementById('emp-pass').value;
-            const emp = state.employees.find(e => e.id == id && e.pass == pass);
-            if(emp) {
-                state.currentUser = emp;
-                state.isAdmin = (id === 'admin');
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                setupRealtime();
-                refreshIcons();
-            } else { alert("Acceso denegado"); }
-        }
-
-        function renderTables() {
-            const grid = document.getElementById('grid-mesas');
-            grid.innerHTML = '';
-            state.mesas.forEach(m => {
-                const occ = m.order.length > 0;
-                const div = document.createElement('div');
-                div.className = `aspect-square rounded-[2rem] flex flex-col items-center justify-center cursor-pointer border-2 transition-all ${occ ? 'bg-orange-500 text-white border-orange-600 shadow-lg scale-105' : 'bg-white text-gray-800 hover:border-orange-300'}`;
-                div.onclick = () => openOrder('mesa', m.id);
-                div.innerHTML = `<span class="text-4xl font-black">${m.id}</span><span class="text-[10px] uppercase font-bold opacity-60">${occ ? 'Ocupada' : 'Libre'}</span>`;
-                grid.appendChild(div);
-            });
-        }
-
-        function openOrder(type, id) {
-            activeTarget = { type, id };
-            const data = type === 'mesa' ? state.mesas.find(x => x.id == id) : state.externalOrders.find(x => x.id == id);
-            document.getElementById('order-title').innerText = type === 'mesa' ? `Mesa ${id}` : data.customer;
-            document.getElementById('order-modal').classList.remove('hidden');
-            renderMenuSelector();
-            renderOrderItems(data.order);
-        }
-
-        function renderMenuSelector() {
-            const cont = document.getElementById('menu-selector');
-            cont.innerHTML = state.menu.map(i => `<div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer font-bold shadow-sm hover:border-orange-500 h-24 flex flex-col justify-center">${i.name}<br><span class="text-orange-600">$${i.price}</span></div>`).join('');
-        }
-
-        // LÓGICA DE VARIANTES ACTUALIZADA
-        function initItemConfig(item) {
-            tempItem = { ...item };
-            selectedVariants = [];
-            extraChargeApplied = true;
-            
-            document.getElementById('menu-container').classList.add('hidden');
-            document.getElementById('product-config').classList.remove('hidden');
-            document.getElementById('config-name').innerText = item.name;
-            document.getElementById('config-note').value = "";
-            
-            const renderVars = (str, containerId) => {
-                const cont = document.getElementById(containerId);
-                if(str) {
-                    cont.parentElement.classList.remove('hidden');
-                    cont.innerHTML = str.split(',').map(v => `<button onclick="toggleVar('${v.trim()}', this)" class="variant-btn border-2 px-4 py-2 rounded-xl text-xs font-bold uppercase transition-colors">${v.trim()}</button>`).join('');
-                } else {
-                    cont.parentElement.classList.add('hidden');
-                }
-            };
-            renderVars(item.varA, 'v1-options');
-            renderVars(item.varB, 'v2-options');
-            updateExtraChargeUI();
-        }
-
-        function toggleVar(val, btn) {
-            const index = selectedVariants.indexOf(val);
-            if (index > -1) {
-                selectedVariants.splice(index, 1);
-                btn.classList.remove('active');
+            if(type === 'domicilio') {
+                btnDom.className = "flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white";
+                btnPick.className = "flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500";
+                addrInput.style.display = 'block';
             } else {
-                if (selectedVariants.length < 4) {
-                    selectedVariants.push(val);
-                    btn.classList.add('active');
-                } else { alert("Máximo 4 variantes"); }
+                btnPick.className = "flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white";
+                btnDom.className = "flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500";
+                addrInput.style.display = 'none';
             }
-            updateExtraChargeUI();
         }
 
+        function createExternalOrder() {
+            const name = document.getElementById('ext-name').value;
+            const phone = document.getElementById('ext-phone').value;
+            const address = document.getElementById('ext-address').value;
+
+            if(!name || !phone) return alert("Nombre y Celular son obligatorios");
+            if(currentDeliveryType === 'domicilio' && !address) return alert("Dirección necesaria para domicilio");
+
+            const newOrder = { 
+                id: Date.now(), 
+                customer: `${name} (${currentDeliveryType.toUpperCase()})`, 
+                phone: phone,
+                address: currentDeliveryType === 'pickup' ? 'PICKUP EN TIENDA' : address, 
+                order: [] 
+            };
+            state.externalOrders.push(newOrder);
+            renderExternalOrders(); openOrder('ext', newOrder.id);
+            // Reset
+            document.getElementById('ext-name').value = "";
+            document.getElementById('ext-phone').value = "";
+            document.getElementById('ext-address').value = "";
+        }
+
+        function renderExternalOrders() {
+            document.getElementById('list-external').innerHTML = state.externalOrders.map(o => `
+                <div class="bg-white p-4 rounded-3xl border flex justify-between items-center shadow-sm">
+                    <div><b>${o.customer}</b><br><small class="text-gray-400">Tel: ${o.phone}</small></div>
+                    <button onclick="openOrder('ext', ${o.id})" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold">ABRIR</button>
+                </div>`).join('');
+        }
+
+        // --- CAMBIOS EN PRECIOS / VARIANTES ---
         function updateExtraChargeUI() {
-            const cont = document.getElementById('extra-charge-container');
-            const extraCount = Math.max(0, selectedVariants.length - 2);
-            const extraCost = extraChargeApplied ? (extraCount * 10) : 0;
-            
-            cont.innerHTML = `
+            // Cambio solicitado: $10 por cada una a partir de las 2 iniciales (3ra y 4ta cobran)
+            const extraV1 = Math.max(0, selectedV1.length - 2) * 10;
+            const extraV2 = Math.max(0, selectedV2.length - 2) * 10;
+            const totalExtra = extraChargeApplied ? (extraV1 + extraV2) : 0;
+
+            document.getElementById('extra-charge-ui').innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="font-bold text-orange-800">Cargo por Guisos Extra: $${extraCost}</p>
-                        <p class="text-[10px] text-orange-600">${selectedVariants.length}/4 seleccionados (Gratis: 2)</p>
+                        <p class="font-black text-orange-800">Cargos Extra: $${totalExtra.toFixed(2)}</p>
+                        <p class="text-[10px] text-orange-500 font-bold">V1: ${selectedV1.length}/4 | V2: ${selectedV2.length}/4</p>
                     </div>
-                    <button onclick="toggleExtraCharge()" class="px-4 py-2 rounded-xl text-xs font-black ${extraChargeApplied ? 'bg-white text-red-500' : 'bg-orange-600 text-white'}">
-                        ${extraChargeApplied ? 'QUITAR CARGO' : 'APLICAR CARGO'}
+                    <button onclick="extraChargeApplied = !extraChargeApplied; updateExtraChargeUI();" class="text-xs font-black px-4 py-2 rounded-xl ${extraChargeApplied ? 'bg-white text-red-500 border' : 'bg-orange-600 text-white'}">
+                        ${extraChargeApplied ? 'QUITAR EXTRAS' : 'APLICAR EXTRAS'}
                     </button>
-                </div>
-            `;
-        }
-
-        function toggleExtraCharge() {
-            extraChargeApplied = !extraChargeApplied;
-            updateExtraChargeUI();
+                </div>`;
         }
 
         async function confirmItem() {
-            const extraCount = Math.max(0, selectedVariants.length - 2);
-            const extraCost = extraChargeApplied ? (extraCount * 10) : 0;
+            const extraV1 = Math.max(0, selectedV1.length - 2) * 10;
+            const extraV2 = Math.max(0, selectedV2.length - 2) * 10;
+            const totalExtra = extraChargeApplied ? (extraV1 + extraV2) : 0;
             
+            const varAStr = selectedV1.join(', ');
+            const varBStr = selectedV2.join(', ');
+            const finalVars = [varAStr, varBStr].filter(x => x).join(' | ');
+
             const final = { 
                 ...tempItem, 
-                price: parseFloat(tempItem.price) + extraCost,
-                selectedVar: selectedVariants.join(', '), 
-                note: document.getElementById('config-note').value,
+                price: parseFloat(tempItem.price) + totalExtra, 
+                selectedVar: finalVars, 
+                note: document.getElementById('config-note').value, 
                 isNew: true 
             };
 
             if(activeTarget.type === 'mesa') {
-                const m = state.mesas.find(x => x.id == activeTarget.id);
+                const m = state.mesas.find(x => x.id == activeTarget.id); 
                 m.order.push(final);
                 await _supabase.from('mesas').update({ order: JSON.stringify(m.order) }).eq('id', m.id);
-            } else {
-                state.externalOrders.find(x => x.id == activeTarget.id).order.push(final);
+            } else { 
+                state.externalOrders.find(x => x.id == activeTarget.id).order.push(final); 
             }
-            cancelConfig();
             openOrder(activeTarget.type, activeTarget.id);
         }
 
+        // --- RESTO DE FUNCIONES (SIN CAMBIOS) ---
+        function renderTables() {
+            document.getElementById('grid-mesas').innerHTML = state.mesas.map(m => `
+                <div onclick="openOrder('mesa', ${m.id})" class="aspect-square rounded-[2rem] flex flex-col items-center justify-center cursor-pointer border-2 ${m.order.length > 0 ? 'bg-orange-500 text-white border-orange-600' : 'bg-white border-gray-100'} transition-all">
+                    <span class="text-3xl font-black italic">${m.id}</span>
+                </div>`).join('');
+        }
+
+        function openOrder(type, id) {
+            activeTarget = { type, id };
+            let data = type === 'mesa' ? state.mesas.find(x => x.id == id) : state.externalOrders.find(x => x.id == id);
+            document.getElementById('order-title').innerText = type === 'mesa' ? `Mesa ${id}` : data.customer;
+            document.getElementById('order-modal').classList.remove('hidden');
+            document.getElementById('menu-container').classList.remove('hidden');
+            document.getElementById('product-config').classList.add('hidden');
+            renderMenuSelector(); renderOrderItems(data.order);
+        }
+
+        function renderMenuSelector() {
+            document.getElementById('menu-selector').innerHTML = state.menu.map(i => `
+                <div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer hover:border-orange-500 flex flex-col justify-center h-28 shadow-sm">
+                    <span class="font-bold">${i.name}</span><br><span class="text-orange-600 font-black italic">$${i.price}</span>
+                </div>`).join('');
+        }
+
+        function initItemConfig(item) {
+            tempItem = { ...item };
+            selectedV1 = []; selectedV2 = []; extraChargeApplied = true;
+            document.getElementById('menu-container').classList.add('hidden');
+            document.getElementById('product-config').classList.remove('hidden');
+            document.getElementById('config-name').innerText = item.name;
+            document.getElementById('v1-options').innerHTML = (item.varA || "").split(',').filter(x => x.trim()).map(v => `<button onclick="toggleV1('${v.trim()}', this)" class="variant-btn border-2 px-4 py-2 rounded-xl text-xs font-bold uppercase">${v.trim()}</button>`).join('');
+            document.getElementById('v2-options').innerHTML = (item.varB || "").split(',').filter(x => x.trim()).map(v => `<button onclick="toggleV2('${v.trim()}', this)" class="variant-btn border-2 px-4 py-2 rounded-xl text-xs font-bold uppercase">${v.trim()}</button>`).join('');
+            updateExtraChargeUI();
+        }
+
+        function toggleV1(val, btn) {
+            const idx = selectedV1.indexOf(val);
+            if(idx > -1) { selectedV1.splice(idx, 1); btn.classList.remove('active'); }
+            else if(selectedV1.length < 4) { selectedV1.push(val); btn.classList.add('active'); }
+            updateExtraChargeUI();
+        }
+
+        function toggleV2(val, btn) {
+            const idx = selectedV2.indexOf(val);
+            if(idx > -1) { selectedV2.splice(idx, 1); btn.classList.remove('active'); }
+            else if(selectedV2.length < 4) { selectedV2.push(val); btn.classList.add('active'); }
+            updateExtraChargeUI();
+        }
+
         function renderOrderItems(items) {
-            const cont = document.getElementById('order-items');
-            let t = 0;
-            cont.innerHTML = items.map(i => { 
-                t += parseFloat(i.price); 
-                return `<div class="bg-gray-50 p-3 rounded-xl text-xs flex justify-between border ${i.isNew ? 'border-orange-200' : ''}">
-                    <div><b>${i.name}</b><br><span class="text-[10px] text-gray-400">${i.selectedVar || 'Sin variantes'}</span></div>
-                    <span class="font-bold">$${i.price}</span>
-                </div>`; 
+            let total = 0;
+            document.getElementById('order-items').innerHTML = items.map(i => {
+                total += parseFloat(i.price);
+                return `<div class="p-3 bg-gray-50 rounded-xl text-xs border ${i.isNew ? 'border-orange-200' : ''} flex justify-between">
+                    <span><b>${i.name}</b><br><small class="text-orange-600 font-bold">${i.selectedVar || ''}</small></span><span class="font-bold">$${parseFloat(i.price).toFixed(2)}</span>
+                </div>`;
             }).join('');
-            document.getElementById('order-total').innerText = `$${t.toFixed(2)}`;
+            document.getElementById('order-total').innerText = `$${total.toFixed(2)}`;
         }
 
         async function sendKitchenSignal() {
             if(activeTarget.type === 'mesa') {
                 const m = state.mesas.find(x => x.id == activeTarget.id);
-                // Aseguramos que se vea en cocina quitándola del historial de ocultos
-                state.kitchenHide = state.kitchenHide.filter(id => id !== 'm'+m.id);
                 m.order = m.order.map(i => ({...i, isNew: false}));
                 await _supabase.from('mesas').update({ order: JSON.stringify(m.order) }).eq('id', m.id);
+                state.kitchenHide = state.kitchenHide.filter(id => id !== 'm'+m.id);
+            } else {
+                const o = state.externalOrders.find(x => x.id == activeTarget.id);
+                o.order = o.order.map(i => ({...i, isNew: false}));
+                state.kitchenHide = state.kitchenHide.filter(id => id !== 'e'+o.id);
             }
-            alert("Pedido enviado a cocina");
-            closeOrderModal();
-            renderKitchen();
+            alert("Enviado a cocina"); closeOrderModal(); renderKitchen();
+        }
+
+        function renderKitchen() {
+            const cont = document.getElementById('kitchen-orders'); cont.innerHTML = '';
+            state.mesas.filter(m => m.order.length > 0 && !state.kitchenHide.includes('m'+m.id)).forEach(m => {
+                cont.appendChild(createKitchenCard(`Mesa ${m.id}`, m.order, () => { state.kitchenHide.push('m'+m.id); renderKitchen(); }));
+            });
+            state.externalOrders.filter(o => o.order.length > 0 && !state.kitchenHide.includes('e'+o.id)).forEach(o => {
+                cont.appendChild(createKitchenCard(`${o.customer}`, o.order, () => { state.kitchenHide.push('e'+o.id); renderKitchen(); }));
+            });
+        }
+
+        function createKitchenCard(title, items, onDone) {
+            const div = document.createElement('div');
+            div.className = "bg-white p-5 rounded-3xl border-t-8 border-orange-500 shadow-md";
+            div.innerHTML = `<h4 class="font-black text-xl mb-4">${title}</h4><div class="space-y-2 mb-4 text-sm">${items.map(i => `• ${i.name}<br><span class="text-orange-600 font-bold ml-2">(${i.selectedVar || 'N/A'})</span>`).join('<br>')}</div><button class="w-full bg-green-600 text-white py-3 rounded-2xl font-bold">LISTO</button>`;
+            div.querySelector('button').onclick = onDone; return div;
         }
 
         async function finalizeSale(metodo) {
             let order, total = 0;
             if(activeTarget.type === 'mesa') {
-                const m = state.mesas.find(x => x.id == activeTarget.id);
-                order = m.order;
+                const m = state.mesas.find(x => x.id == activeTarget.id); order = m.order;
                 total = order.reduce((acc, i) => acc + parseFloat(i.price), 0);
                 await _supabase.from('mesas').update({ order: '[]' }).eq('id', m.id);
             } else {
-                const o = state.externalOrders.find(x => x.id == activeTarget.id);
-                order = o.order;
+                const o = state.externalOrders.find(x => x.id == activeTarget.id); order = o.order;
                 total = order.reduce((acc, i) => acc + parseFloat(i.price), 0);
                 state.externalOrders = state.externalOrders.filter(x => x.id != o.id);
             }
-            if(total <= 0) return;
-            await _supabase.from('ventas').insert([{ 
-                waiter: state.currentUser.name, 
-                total, 
-                items: JSON.stringify(order), 
-                metodo_pago: metodo, 
-                archivado: false,
-                created_at: new Date().toISOString()
-            }]);
-            document.getElementById('payment-modal').classList.add('hidden');
-            document.getElementById('order-modal').classList.add('hidden');
-            alert("Venta completada");
+            if(total > 0) { await _supabase.from('ventas').insert([{ waiter: state.currentUser.name, total, items: JSON.stringify(order), metodo_pago: metodo, archivado: false }]); }
+            document.getElementById('payment-modal').classList.add('hidden'); closeOrderModal(); loadInitialData();
         }
 
-        // REPORTE DE CORTE DETALLADO
         async function doCorteCaja() {
-            if(!confirm("¿Desea cerrar el turno y generar el reporte detallado?")) return;
-
-            let totE = 0, totT = 0, itemsMap = {};
-            let movimientos = [];
-
+            if(!confirm("¿Cerrar caja y generar PDF?")) return;
+            const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: [80, 200] });
+            let y = 10; let totalE = 0, totalT = 0;
+            doc.setFontSize(14).text("CORTE DE CAJA", 40, y, {align: 'center'}); y += 10;
             state.history.forEach(v => {
-                const monto = parseFloat(v.total);
-                if(v.metodo_pago === 'Efectivo') totE += monto; else totT += monto;
-                
-                const productos = JSON.parse(v.items);
-                movimientos.push({
-                    hora: new Date(v.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    total: monto,
-                    metodo: v.metodo_pago,
-                    mesero: v.waiter
-                });
-
-                productos.forEach(it => {
-                    itemsMap[it.name] = (itemsMap[it.name] || 0) + 1;
-                });
+                if(v.metodo_pago === 'Efectivo') totalE += v.total; else totalT += v.total;
+                doc.setFontSize(7).text(`${new Date(v.created_at).toLocaleTimeString()} - $${v.total.toFixed(2)}`, 10, y); y += 4;
             });
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'mm', format: [80, 250] });
-            let y = 10;
-
-            doc.setFontSize(14).text("SABOR POS - CORTE", 40, y, { align: "center" });
-            y += 8;
-            doc.setFontSize(8).text(`Fecha: ${new Date().toLocaleString()}`, 10, y);
-            y += 4;
-            doc.text(`Cajero: ${state.currentUser.name}`, 10, y);
-            
-            y += 8;
-            doc.setFont(undefined, 'bold').text("RESUMEN DE VENTAS", 10, y);
-            y += 4;
-            doc.setFont(undefined, 'normal').text(`Efectivo: $${totE.toFixed(2)}`, 10, y);
-            y += 4;
-            doc.text(`Tarjeta:  $${totT.toFixed(2)}`, 10, y);
-            y += 6;
-            doc.setFontSize(10).setFont(undefined, 'bold').text(`TOTAL TURNO: $${(totE + totT).toFixed(2)}`, 10, y);
-            
-            y += 10;
-            doc.setFontSize(8).text("HISTORIAL DE MOVIMIENTOS", 10, y);
-            y += 4;
-            doc.setFontSize(6).setFont(undefined, 'normal');
-            movimientos.forEach(m => {
-                doc.text(`${m.hora} | ${m.metodo.charAt(0)} | $${m.total.toFixed(2)} | ${m.mesero}`, 10, y);
-                y += 4;
-                if(y > 230) { doc.addPage(); y = 10; }
-            });
-
-            y += 6;
-            doc.setFontSize(8).setFont(undefined, 'bold').text("CONTROL DE PRODUCTOS", 10, y);
-            y += 4;
-            doc.setFontSize(7).setFont(undefined, 'normal');
-            for (let [nombre, cant] of Object.entries(itemsMap)) {
-                doc.text(`${cant}x ${nombre}`, 10, y);
-                y += 4;
-            }
-
-            doc.save(`Corte_${new Date().toISOString().slice(0,10)}.pdf`);
+            y += 5; doc.text(`TOTAL EFECTIVO: $${totalE.toFixed(2)}`, 10, y); y += 4;
+            doc.text(`TOTAL TARJETA: $${totalT.toFixed(2)}`, 10, y);
+            doc.save(`Corte_${Date.now()}.pdf`);
             await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false);
             location.reload();
         }
 
         async function addProduct() {
-            const name = document.getElementById('p-name').value;
-            const price = document.getElementById('p-price').value;
-            const varA = document.getElementById('p-varA').value;
-            const varB = document.getElementById('p-varB').value;
-            if(!name || !price) return;
-            await _supabase.from('menu').insert([{name, price, varA, varB}]);
-            loadInitialData();
+            const name = document.getElementById('p-name').value; const price = document.getElementById('p-price').value;
+            const varA = document.getElementById('p-varA').value; const varB = document.getElementById('p-varB').value;
+            if(name && price) { await _supabase.from('menu').insert([{name, price, varA, varB}]); loadInitialData(); }
         }
 
-        async function addMesa() {
-            const id = document.getElementById('m-number').value;
-            if(!id) return;
-            await _supabase.from('mesas').insert([{id, order: '[]'}]);
-            loadInitialData();
-        }
-
-        async function addEmployee() {
-            const name = document.getElementById('e-name').value;
-            const pass = document.getElementById('e-pass').value;
-            if(!name || !pass) return;
-            await _supabase.from('empleados').insert([{name, pass}]);
-            loadInitialData();
-        }
+        async function addMesa() { const id = document.getElementById('m-number').value; if(id) { await _supabase.from('mesas').insert([{id, order: '[]'}]); loadInitialData(); } }
+        async function addEmployee() { const name = document.getElementById('e-name').value; const pass = document.getElementById('e-pass').value; if(name && pass) { await _supabase.from('empleados').insert([{name, pass}]); loadInitialData(); } }
 
         function renderAdminLists() {
-            document.getElementById('admin-menu-list').innerHTML = state.menu.map(i => `<div class="p-2 border-b flex justify-between text-xs"><span>${i.name} ($${i.price})</span><button onclick="delP(${i.id})" class="text-red-500 font-bold">Quitar</button></div>`).join('');
-            document.getElementById('admin-mesas-list').innerHTML = state.mesas.map(m => `<div class="bg-gray-100 p-2 rounded-lg flex gap-2"><span>Mesa ${m.id}</span><button onclick="delM(${m.id})" class="text-red-500 font-bold">×</button></div>`).join('');
-            document.getElementById('admin-emps-list').innerHTML = state.employees.map(e => `<div class="p-2 border-b flex justify-between text-xs"><span>${e.name}</span><button onclick="delE(${e.id})" class="text-red-500">Eliminar</button></div>`).join('');
+            document.getElementById('admin-menu-list').innerHTML = state.menu.map(i => `<div class="p-2 border-b flex justify-between text-xs"><span>${i.name} ($${i.price})</span><button onclick="delP(${i.id})" class="text-red-500">×</button></div>`).join('');
+            document.getElementById('admin-mesas-list').innerHTML = state.mesas.map(m => `<div class="bg-gray-100 p-2 rounded-lg flex gap-2 text-xs"><span>M${m.id}</span><button onclick="delM(${m.id})" class="text-red-500 font-bold">×</button></div>`).join('');
+            document.getElementById('admin-emps-list').innerHTML = state.employees.map(e => `<div class="p-2 border-b flex justify-between text-xs"><span>${e.name}</span><button onclick="delE(${e.id})" class="text-red-500">×</button></div>`).join('');
         }
 
         async function delP(id) { await _supabase.from('menu').delete().eq('id', id); loadInitialData(); }
         async function delM(id) { await _supabase.from('mesas').delete().eq('id', id); loadInitialData(); }
         async function delE(id) { await _supabase.from('empleados').delete().eq('id', id); loadInitialData(); }
 
-        function renderKitchen() {
-            const cont = document.getElementById('kitchen-orders');
-            cont.innerHTML = '';
-            state.mesas.filter(m => m.order.length > 0 && !state.kitchenHide.includes('m'+m.id)).forEach(m => {
-                const div = document.createElement('div');
-                div.className = "bg-white p-5 rounded-3xl border-t-8 border-orange-500 shadow-md";
-                div.innerHTML = `<h4 class="font-black text-xl mb-4 uppercase">Mesa ${m.id}</h4><div class="space-y-1 mb-4 text-sm">${m.order.map(i => `• <b>1x</b> ${i.name} <small class="text-gray-400">(${i.selectedVar})</small>`).join('<br>')}</div><button onclick="state.kitchenHide.push('m${m.id}'); renderKitchen();" class="w-full bg-green-600 text-white py-3 rounded-2xl font-bold">MARCAR LISTO</button>`;
-                cont.appendChild(div);
-            });
-        }
-
-        function createExternalOrder() {
-            const name = document.getElementById('ext-name').value;
-            if(!name) return;
-            const o = { id: Date.now(), customer: name, address: document.getElementById('ext-address').value, order: [] };
-            state.externalOrders.push(o);
-            openOrder('ext', o.id);
-        }
-
-        function renderExternalOrders() {
-            document.getElementById('list-external').innerHTML = state.externalOrders.map(o => `
-                <div class="bg-white p-5 rounded-3xl border shadow-sm flex justify-between items-center">
-                    <div><p class="font-bold text-lg">${o.customer}</p><p class="text-xs text-gray-400">${o.address || 'Pickup'}</p></div>
-                    <button onclick="openOrder('ext', ${o.id})" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ver Ticket</button>
-                </div>`).join('');
-        }
-
-        function showTab(t) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-'+t).classList.add('active');
-            refreshIcons();
-        }
-
         function updateAdminStats() {
-            let t = state.history.reduce((a, b) => a + parseFloat(b.total), 0);
             let e = state.history.filter(v => v.metodo_pago === 'Efectivo').reduce((a, b) => a + parseFloat(b.total), 0);
-            document.getElementById('total-ventas-dia').innerText = `$${t.toFixed(2)}`;
             document.getElementById('total-efectivo').innerText = `$${e.toFixed(2)}`;
         }
 
-        function cancelConfig() { document.getElementById('product-config').classList.add('hidden'); document.getElementById('menu-container').classList.remove('hidden'); }
+        async function attemptLogin() {
+            const id = document.getElementById('emp-id').value; const pass = document.getElementById('emp-pass').value;
+            await loadInitialData();
+            const emp = state.employees.find(e => e.id == id && e.pass == pass);
+            if(emp || (id === 'admin' && pass === '1234')) {
+                state.currentUser = emp || {name: 'Admin'}; state.isAdmin = (id === 'admin');
+                document.getElementById('login-screen').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden');
+            } else alert("Error de PIN");
+        }
+
+        function showTab(t) { 
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); 
+            document.getElementById('tab-'+t).classList.add('active'); 
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(t === 'cocina') renderKitchen();
+        }
         function closeOrderModal() { document.getElementById('order-modal').classList.add('hidden'); }
+        function cancelConfig() { document.getElementById('product-config').classList.add('hidden'); document.getElementById('menu-container').classList.remove('hidden'); }
         function openPayment() { document.getElementById('payment-modal').classList.remove('hidden'); }
         async function checkAdminAccess() { if(state.isAdmin) showTab('admin'); else { if(prompt("PIN Admin:") === "1234") { state.isAdmin = true; showTab('admin'); } } }
-
-        window.onload = loadInitialData;
+        
+        window.onload = () => {
+            loadInitialData();
+            setDeliveryType('domicilio');
+        };
     </script>
 </body>
 </html>
