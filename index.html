@@ -15,9 +15,10 @@
         .tab-content.active { display: block; }
         .variant-btn.active { border-color: #ea580c; background-color: #fff7ed; color: #ea580c; }
         .nav-btn.active { color: #ea580c; background-color: #fff7ed; }
-        /* Animación para el botón de refresco */
         .spin-anim { animation: spin 1s linear; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        /* Mejora de scroll para el menú cuando hay muchos ítems */
+        #order-items { max-height: 50vh; overflow-y: auto; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -37,14 +38,11 @@
     <div id="main-app" class="hidden pb-24 lg:pb-0 lg:pl-64">
         <nav class="fixed bottom-0 left-0 right-0 bg-white border-t lg:border-t-0 lg:border-r lg:w-64 lg:top-0 lg:h-full z-40 flex lg:flex-col justify-around lg:justify-start lg:p-4 shadow-2xl">
             <div class="hidden lg:block mb-8 px-4 pt-4 font-black text-2xl text-orange-600 italic">SaborPOS</div>
-            
             <button onclick="showTab('mesas')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="layout-grid" class="lg:mr-3"></i><span>Salón</span></button>
             <button onclick="showTab('domicilio')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="truck" class="lg:mr-3"></i><span>Envíos</span></button>
             <button onclick="showTab('cocina')" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="flame" class="lg:mr-3"></i><span>Cocina</span></button>
             <button onclick="checkAdminAccess()" class="nav-btn p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-gray-500 rounded-xl"><i data-lucide="shield-check" class="lg:mr-3"></i><span>Admin</span></button>
-            
             <button onclick="manualRefresh(this)" class="p-3 flex flex-col lg:flex-row items-center lg:px-4 lg:mb-2 text-blue-600 font-bold"><i data-lucide="refresh-cw" class="lg:mr-3"></i><span>Actualizar</span></button>
-
             <button onclick="location.reload()" class="p-3 flex flex-col lg:flex-row items-center lg:px-4 text-red-500 mt-auto"><i data-lucide="log-out" class="lg:mr-3"></i><span>Salir</span></button>
         </nav>
 
@@ -133,7 +131,9 @@
                 <button onclick="closeOrderModal()"><i data-lucide="x"></i></button>
             </div>
             <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-                <div id="menu-container" class="flex-1 p-6 overflow-y-auto bg-gray-50"><div id="menu-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div></div>
+                <div id="menu-container" class="flex-1 p-6 overflow-y-auto bg-gray-50">
+                    <div id="menu-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                </div>
                 <div id="product-config" class="hidden flex-1 p-6 flex flex-col bg-white overflow-y-auto">
                     <h4 id="config-name" class="text-2xl font-black mb-6"></h4>
                     <div class="space-y-6 flex-1">
@@ -147,11 +147,10 @@
                         <button onclick="confirmItem()" class="flex-1 p-4 bg-orange-600 text-white rounded-2xl font-bold">Agregar</button>
                     </div>
                 </div>
-                <div class="w-full md:w-80 p-6 border-l bg-white flex flex-col">
-                    <div id="order-items" class="flex-1 overflow-y-auto space-y-2 mb-4"></div>
+                <div class="w-full md:w-80 p-6 border-l bg-white flex flex-col overflow-hidden">
+                    <div id="order-items" class="flex-1 overflow-y-auto space-y-2 mb-4 pr-2"></div>
                     <div class="border-t pt-4">
                         <div class="flex justify-between font-black text-2xl mb-4"><span>TOTAL</span><span id="order-total">$0.00</span></div>
-                        <button onclick="sendKitchenSignal()" class="w-full bg-gray-800 text-white py-4 rounded-xl font-bold mb-2">ENVIAR COMANDA</button>
                         <button onclick="openPayment()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold">COBRAR</button>
                     </div>
                 </div>
@@ -198,8 +197,7 @@
         }
 
         function setupRealtime() {
-            _supabase
-                .channel('db-changes')
+            _supabase.channel('db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, () => { loadInitialData(); })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => { loadInitialData(); })
                 .subscribe();
@@ -214,18 +212,10 @@
 
         function setDeliveryType(type) {
             currentDeliveryType = type;
-            const btnDom = document.getElementById('btn-dom');
-            const btnPick = document.getElementById('btn-pick');
             const addrInput = document.getElementById('ext-address');
-            if(type === 'domicilio') {
-                btnDom.className = "flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white";
-                btnPick.className = "flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500";
-                addrInput.style.display = 'block';
-            } else {
-                btnPick.className = "flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white";
-                btnDom.className = "flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500";
-                addrInput.style.display = 'none';
-            }
+            document.getElementById('btn-dom').className = type === 'domicilio' ? "flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white" : "flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500";
+            document.getElementById('btn-pick').className = type === 'pickup' ? "flex-1 py-2 rounded-xl font-bold bg-orange-600 text-white" : "flex-1 py-2 rounded-xl font-bold bg-gray-100 text-gray-500";
+            addrInput.style.display = type === 'domicilio' ? 'block' : 'none';
         }
 
         function createExternalOrder() {
@@ -233,15 +223,7 @@
             const phone = document.getElementById('ext-phone').value;
             const address = document.getElementById('ext-address').value;
             if(!name || !phone) return alert("Nombre y Celular son obligatorios");
-            if(currentDeliveryType === 'domicilio' && !address) return alert("Dirección necesaria");
-
-            const newOrder = { 
-                id: Date.now(), 
-                customer: `${name} (${currentDeliveryType.toUpperCase()})`, 
-                phone: phone,
-                address: currentDeliveryType === 'pickup' ? 'PICKUP' : address, 
-                order: [] 
-            };
+            const newOrder = { id: Date.now(), customer: `${name} (${currentDeliveryType.toUpperCase()})`, phone: phone, address: currentDeliveryType === 'pickup' ? 'PICKUP' : address, order: [] };
             state.externalOrders.push(newOrder);
             renderExternalOrders(); 
             openOrder('ext', newOrder.id);
@@ -257,14 +239,8 @@
         }
 
         function updateExtraChargeUI() {
-            const extraV1 = Math.max(0, selectedV1.length - 2) * 10;
-            const extraV2 = Math.max(0, selectedV2.length - 2) * 10;
-            const totalExtra = extraChargeApplied ? (extraV1 + extraV2) : 0;
-            document.getElementById('extra-charge-ui').innerHTML = `
-                <div class="flex justify-between items-center text-sm">
-                    <div><p class="font-black text-orange-800">Cargos Extra: $${totalExtra.toFixed(2)}</p></div>
-                    <button onclick="extraChargeApplied = !extraChargeApplied; updateExtraChargeUI();" class="text-xs font-bold px-3 py-1 rounded-lg ${extraChargeApplied ? 'bg-white text-red-500 border' : 'bg-orange-600 text-white'}">${extraChargeApplied ? 'Quitar' : 'Aplicar'}</button>
-                </div>`;
+            const extra = extraChargeApplied ? (Math.max(0, selectedV1.length - 2) * 10 + Math.max(0, selectedV2.length - 2) * 10) : 0;
+            document.getElementById('extra-charge-ui').innerHTML = `<div class="flex justify-between items-center text-sm"><div><p class="font-black text-orange-800">Cargos Extra: $${extra.toFixed(2)}</p></div><button onclick="extraChargeApplied = !extraChargeApplied; updateExtraChargeUI();" class="text-xs font-bold px-3 py-1 rounded-lg ${extraChargeApplied ? 'bg-white text-red-500 border' : 'bg-orange-600 text-white'}">${extraChargeApplied ? 'Quitar' : 'Aplicar'}</button></div>`;
         }
 
         function renderTables() {
@@ -291,20 +267,6 @@
             div.querySelector('button').onclick = onDone; return div;
         }
 
-        async function sendKitchenSignal() {
-            if(activeTarget.type === 'mesa') {
-                const m = state.mesas.find(x => x.id == activeTarget.id);
-                m.order = m.order.map(i => ({...i, isNew: false}));
-                await _supabase.from('mesas').update({ order: JSON.stringify(m.order) }).eq('id', m.id);
-                state.kitchenHide = state.kitchenHide.filter(id => id !== 'm'+m.id);
-            } else {
-                const o = state.externalOrders.find(x => x.id == activeTarget.id);
-                o.order = o.order.map(i => ({...i, isNew: false}));
-                state.kitchenHide = state.kitchenHide.filter(id => id !== 'e'+o.id);
-            }
-            alert("¡Enviado a Cocina!"); closeOrderModal(); renderKitchen();
-        }
-
         function openOrder(type, id) {
             activeTarget = { type, id };
             let data = type === 'mesa' ? state.mesas.find(x => x.id == id) : state.externalOrders.find(x => x.id == id);
@@ -316,10 +278,7 @@
         }
 
         function renderMenuSelector() {
-            document.getElementById('menu-selector').innerHTML = state.menu.map(i => `
-                <div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer hover:border-orange-500 h-28 shadow-sm">
-                    <span class="font-bold">${i.name}</span><br><span class="text-orange-600 font-black italic">$${i.price}</span>
-                </div>`).join('');
+            document.getElementById('menu-selector').innerHTML = state.menu.map(i => `<div onclick='initItemConfig(${JSON.stringify(i)})' class="bg-white p-4 rounded-2xl border cursor-pointer hover:border-orange-500 h-28 shadow-sm"><span class="font-bold">${i.name}</span><br><span class="text-orange-600 font-black italic">$${i.price}</span></div>`).join('');
         }
 
         function initItemConfig(item) {
@@ -348,26 +307,27 @@
         }
 
         async function confirmItem() {
-            const extraV1 = Math.max(0, selectedV1.length - 2) * 10;
-            const extraV2 = Math.max(0, selectedV2.length - 2) * 10;
-            const totalExtra = extraChargeApplied ? (extraV1 + extraV2) : 0;
+            const extra = extraChargeApplied ? (Math.max(0, selectedV1.length - 2) * 10 + Math.max(0, selectedV2.length - 2) * 10) : 0;
             const finalVars = [selectedV1.join(', '), selectedV2.join(', ')].filter(x => x).join(' | ');
-            const final = { ...tempItem, price: parseFloat(tempItem.price) + totalExtra, selectedVar: finalVars, note: document.getElementById('config-note').value, isNew: true };
+            const final = { ...tempItem, price: parseFloat(tempItem.price) + extra, selectedVar: finalVars, note: document.getElementById('config-note').value, isNew: true };
 
             if(activeTarget.type === 'mesa') {
                 const m = state.mesas.find(x => x.id == activeTarget.id); m.order.push(final);
                 await _supabase.from('mesas').update({ order: JSON.stringify(m.order) }).eq('id', m.id);
-            } else { state.externalOrders.find(x => x.id == activeTarget.id).order.push(final); }
+                state.kitchenHide = state.kitchenHide.filter(id => id !== 'm'+m.id);
+            } else { 
+                const o = state.externalOrders.find(x => x.id == activeTarget.id); o.order.push(final); 
+                state.kitchenHide = state.kitchenHide.filter(id => id !== 'e'+o.id);
+            }
             openOrder(activeTarget.type, activeTarget.id);
+            renderKitchen();
         }
 
         function renderOrderItems(items) {
             let total = 0;
             document.getElementById('order-items').innerHTML = items.map(i => {
                 total += parseFloat(i.price);
-                return `<div class="p-3 bg-gray-50 rounded-xl text-xs border flex justify-between ${i.isNew ? 'border-orange-500' : ''}">
-                    <span><b>${i.name}</b><br><small class="text-orange-600">${i.selectedVar || ''}</small></span><span class="font-bold">$${parseFloat(i.price).toFixed(2)}</span>
-                </div>`;
+                return `<div class="p-3 bg-gray-50 rounded-xl text-xs border flex justify-between ${i.isNew ? 'border-orange-500 bg-orange-50' : ''}"><span><b>${i.name}</b><br><small class="text-orange-600">${i.selectedVar || ''}</small></span><span class="font-bold">$${parseFloat(i.price).toFixed(2)}</span></div>`;
             }).join('');
             document.getElementById('order-total').innerText = `$${total.toFixed(2)}`;
         }
@@ -395,7 +355,7 @@
                 state.currentUser = emp || {name: 'Admin'}; state.isAdmin = (id === 'admin');
                 document.getElementById('login-screen').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden');
                 setupRealtime();
-            } else alert("Error de PIN");
+            } else alert("PIN Incorrecto");
         }
 
         function showTab(t) { 
@@ -407,32 +367,15 @@
 
         async function addProduct() {
             const name = document.getElementById('p-name').value; const price = document.getElementById('p-price').value;
-            const varA = document.getElementById('p-varA').value; const varB = document.getElementById('p-varB').value;
-            if(name && price) { await _supabase.from('menu').insert([{name, price, varA, varB}]); loadInitialData(); }
+            if(name && price) { await _supabase.from('menu').insert([{name, price, varA: document.getElementById('p-varA').value, varB: document.getElementById('p-varB').value}]); loadInitialData(); }
         }
         async function addMesa() { const id = document.getElementById('m-number').value; if(id) { await _supabase.from('mesas').insert([{id, order: '[]'}]); loadInitialData(); } }
         async function delP(id) { await _supabase.from('menu').delete().eq('id', id); loadInitialData(); }
-        
         async function addEmployee() {
-            const id = document.getElementById('e-id').value;
-            const name = document.getElementById('e-name').value;
-            const pass = document.getElementById('e-pass').value;
-            if(id && name && pass) {
-                const { error } = await _supabase.from('empleados').insert([{ id, name, pass }]);
-                if(error) alert("Error: " + error.message);
-                else {
-                    document.getElementById('e-id').value = ""; document.getElementById('e-name').value = ""; document.getElementById('e-pass').value = "";
-                    loadInitialData();
-                }
-            } else alert("Completa todos los campos");
+            const id = document.getElementById('e-id').value; const name = document.getElementById('e-name').value; const pass = document.getElementById('e-pass').value;
+            if(id && name && pass) { await _supabase.from('empleados').insert([{ id, name, pass }]); loadInitialData(); }
         }
-
-        async function delE(id) {
-            if(confirm("¿Eliminar empleado?")) {
-                await _supabase.from('empleados').delete().eq('id', id);
-                loadInitialData();
-            }
-        }
+        async function delE(id) { if(confirm("¿Eliminar?")) { await _supabase.from('empleados').delete().eq('id', id); loadInitialData(); } }
 
         function renderAdminLists() {
             document.getElementById('admin-menu-list').innerHTML = state.menu.map(i => `<div class="p-2 border-b flex justify-between text-xs"><span>${i.name}</span><button onclick="delP(${i.id})" class="text-red-500">×</button></div>`).join('');
@@ -445,12 +388,9 @@
             document.getElementById('total-efectivo').innerText = `$${e.toFixed(2)}`;
         }
         async function doCorteCaja() {
-            if(!confirm("¿Cerrar caja?")) return;
             const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: 'mm', format: [80, 150] });
-            doc.text("CORTE DE CAJA", 40, 10, {align: 'center'});
-            doc.save(`Corte_${Date.now()}.pdf`);
-            await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false);
-            location.reload();
+            doc.text("CORTE DE CAJA", 40, 10, {align: 'center'}); doc.save(`Corte.pdf`);
+            await _supabase.from('ventas').update({ archivado: true }).eq('archivado', false); location.reload();
         }
         function closeOrderModal() { document.getElementById('order-modal').classList.add('hidden'); }
         function cancelConfig() { document.getElementById('product-config').classList.add('hidden'); document.getElementById('menu-container').classList.remove('hidden'); }
