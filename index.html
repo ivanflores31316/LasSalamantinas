@@ -110,7 +110,6 @@
                             <div class="flex gap-2 mb-2"><input type="number" id="m-number" class="w-20 p-2 border rounded-lg"><button onclick="addMesa()" class="bg-black text-white px-4 rounded-lg">Añadir</button></div>
                             <div id="admin-mesas-list" class="flex flex-wrap gap-2"></div>
                         </div>
-                        
                         <div class="bg-white p-6 rounded-3xl border">
                             <h4 class="font-bold mb-4">Registro de Empleados</h4>
                             <div class="space-y-2 mb-4">
@@ -179,7 +178,6 @@
         let selectedV1 = []; let selectedV2 = []; 
         let extraChargeApplied = true;
 
-        // --- FUNCIONES DE CARGA Y REALTIME ---
         async function loadInitialData() {
             const { data: menu } = await _supabase.from('menu').select('*').order('name');
             const { data: mesas } = await _supabase.from('mesas').select('*').order('id');
@@ -199,18 +197,11 @@
             lucide.createIcons();
         }
 
-        // Configurar el "Escucha" en tiempo real para cambios en mesas y ventas
         function setupRealtime() {
             _supabase
                 .channel('db-changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, () => {
-                    console.log("Cambio detectado en Mesas...");
-                    loadInitialData();
-                })
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => {
-                    console.log("Nueva venta detectada...");
-                    loadInitialData();
-                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'mesas' }, () => { loadInitialData(); })
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => { loadInitialData(); })
                 .subscribe();
         }
 
@@ -221,7 +212,6 @@
             setTimeout(() => icon.classList.remove('spin-anim'), 1000);
         }
 
-        // --- ENVIOS ---
         function setDeliveryType(type) {
             currentDeliveryType = type;
             const btnDom = document.getElementById('btn-dom');
@@ -266,7 +256,6 @@
                 </div>`).join('');
         }
 
-        // --- PRECIOS Y VARIANTES ---
         function updateExtraChargeUI() {
             const extraV1 = Math.max(0, selectedV1.length - 2) * 10;
             const extraV2 = Math.max(0, selectedV2.length - 2) * 10;
@@ -278,7 +267,6 @@
                 </div>`;
         }
 
-        // --- SISTEMA DE MESAS Y COCINA (SINCRONIZADO) ---
         function renderTables() {
             document.getElementById('grid-mesas').innerHTML = state.mesas.map(m => `
                 <div onclick="openOrder('mesa', ${m.id})" class="aspect-square rounded-[2rem] flex flex-col items-center justify-center cursor-pointer border-2 ${m.order.length > 0 ? 'bg-orange-500 text-white border-orange-600' : 'bg-white border-gray-100'} transition-all">
@@ -288,13 +276,11 @@
 
         function renderKitchen() {
             const cont = document.getElementById('kitchen-orders'); cont.innerHTML = '';
-            // Render mesas con pedidos
-            state.mesas.filter(m => m.order.length > 0 && !state.kitchenHide.includes('m'+m.id)).forEach(m => {
-                cont.appendChild(createKitchenCard(`Mesa ${m.id}`, m.order, () => { state.kitchenHide.push('m'+m.id); renderKitchen(); }));
+            state.mesas.filter(m => m.order.some(i => i.isNew) && !state.kitchenHide.includes('m'+m.id)).forEach(m => {
+                cont.appendChild(createKitchenCard(`Mesa ${m.id}`, m.order.filter(i => i.isNew), () => { state.kitchenHide.push('m'+m.id); renderKitchen(); }));
             });
-            // Render externos con pedidos
-            state.externalOrders.filter(o => o.order.length > 0 && !state.kitchenHide.includes('e'+o.id)).forEach(o => {
-                cont.appendChild(createKitchenCard(`${o.customer}`, o.order, () => { state.kitchenHide.push('e'+o.id); renderKitchen(); }));
+            state.externalOrders.filter(o => o.order.some(i => i.isNew) && !state.kitchenHide.includes('e'+o.id)).forEach(o => {
+                cont.appendChild(createKitchenCard(`${o.customer}`, o.order.filter(i => i.isNew), () => { state.kitchenHide.push('e'+o.id); renderKitchen(); }));
             });
         }
 
@@ -316,10 +302,9 @@
                 o.order = o.order.map(i => ({...i, isNew: false}));
                 state.kitchenHide = state.kitchenHide.filter(id => id !== 'e'+o.id);
             }
-            alert("¡Enviado!"); closeOrderModal(); renderKitchen();
+            alert("¡Enviado a Cocina!"); closeOrderModal(); renderKitchen();
         }
 
-        // --- OTROS (ESTRUCTURA BASE) ---
         function openOrder(type, id) {
             activeTarget = { type, id };
             let data = type === 'mesa' ? state.mesas.find(x => x.id == id) : state.externalOrders.find(x => x.id == id);
@@ -380,7 +365,7 @@
             let total = 0;
             document.getElementById('order-items').innerHTML = items.map(i => {
                 total += parseFloat(i.price);
-                return `<div class="p-3 bg-gray-50 rounded-xl text-xs border flex justify-between">
+                return `<div class="p-3 bg-gray-50 rounded-xl text-xs border flex justify-between ${i.isNew ? 'border-orange-500' : ''}">
                     <span><b>${i.name}</b><br><small class="text-orange-600">${i.selectedVar || ''}</small></span><span class="font-bold">$${parseFloat(i.price).toFixed(2)}</span>
                 </div>`;
             }).join('');
@@ -402,7 +387,6 @@
             document.getElementById('payment-modal').classList.add('hidden'); closeOrderModal(); loadInitialData();
         }
 
-        // --- ADMIN / LOGIN ---
         async function attemptLogin() {
             const id = document.getElementById('emp-id').value; const pass = document.getElementById('emp-pass').value;
             await loadInitialData();
@@ -410,7 +394,7 @@
             if(emp || (id === 'admin' && pass === '1234')) {
                 state.currentUser = emp || {name: 'Admin'}; state.isAdmin = (id === 'admin');
                 document.getElementById('login-screen').classList.add('hidden'); document.getElementById('main-app').classList.remove('hidden');
-                setupRealtime(); // Iniciar tiempo real tras login
+                setupRealtime();
             } else alert("Error de PIN");
         }
 
@@ -429,7 +413,6 @@
         async function addMesa() { const id = document.getElementById('m-number').value; if(id) { await _supabase.from('mesas').insert([{id, order: '[]'}]); loadInitialData(); } }
         async function delP(id) { await _supabase.from('menu').delete().eq('id', id); loadInitialData(); }
         
-        // --- NUEVAS FUNCIONES DE EMPLEADOS ---
         async function addEmployee() {
             const id = document.getElementById('e-id').value;
             const name = document.getElementById('e-name').value;
@@ -438,9 +421,7 @@
                 const { error } = await _supabase.from('empleados').insert([{ id, name, pass }]);
                 if(error) alert("Error: " + error.message);
                 else {
-                    document.getElementById('e-id').value = "";
-                    document.getElementById('e-name').value = "";
-                    document.getElementById('e-pass').value = "";
+                    document.getElementById('e-id').value = ""; document.getElementById('e-name').value = ""; document.getElementById('e-pass').value = "";
                     loadInitialData();
                 }
             } else alert("Completa todos los campos");
@@ -456,13 +437,7 @@
         function renderAdminLists() {
             document.getElementById('admin-menu-list').innerHTML = state.menu.map(i => `<div class="p-2 border-b flex justify-between text-xs"><span>${i.name}</span><button onclick="delP(${i.id})" class="text-red-500">×</button></div>`).join('');
             document.getElementById('admin-mesas-list').innerHTML = state.mesas.map(m => `<div class="bg-gray-100 p-2 rounded-lg text-xs"><span>M${m.id}</span></div>`).join('');
-            
-            // Render de empleados
-            document.getElementById('admin-employees-list').innerHTML = state.employees.map(e => `
-                <div class="p-2 border-b flex justify-between text-xs items-center">
-                    <span><b>${e.id}</b> - ${e.name}</span>
-                    <button onclick="delE(${e.id})" class="text-red-500 font-bold">×</button>
-                </div>`).join('');
+            document.getElementById('admin-employees-list').innerHTML = state.employees.map(e => `<div class="p-2 border-b flex justify-between text-xs items-center"><span><b>${e.id}</b> - ${e.name}</span><button onclick="delE(${e.id})" class="text-red-500 font-bold">×</button></div>`).join('');
         }
         
         function updateAdminStats() {
